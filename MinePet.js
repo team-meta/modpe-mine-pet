@@ -187,7 +187,7 @@ function newLevel() {
         .getHeight();
 
     /**
-     * newLevel함수에 호출되는 메인 버튼을 생성합니다.
+     * newLevel 함수에 호출되는 메인 버튼을 생성합니다.
      * @since 2016.08.05
      */
     GUI.open = function () {
@@ -205,7 +205,7 @@ function newLevel() {
     };
 
     /**
-     * newLevel함수에 호출되는 메인 버튼을 제거합니다.
+     * newLevel 함수에 호출되는 메인 버튼을 제거합니다.
      * @since 2016.08.05
      */
     GUI.close = function () {
@@ -218,7 +218,7 @@ function newLevel() {
     };
 
     /**
-     * open버튼을 클릭할시 생성되는 메인 메뉴를 생성합니다.
+     * open 버튼을 클릭할 시 생성되는 메인 메뉴를 생성합니다.
      * @since 2016.08.05
      */
     GUI.openMenu = function () {
@@ -320,7 +320,7 @@ function newLevel() {
     };
 
     /**
-     * open버튼을 클릭할시 생성되는 메인 메뉴를 제거합니다.
+     * open 버튼을 클릭할 시 생성되는 메인 메뉴를 제거합니다.
      * @since 2016.08.05
      */
     GUI.closeMenu = function () {
@@ -512,7 +512,7 @@ function newLevel() {
     };
 
     /**
-     * myPet을 움직일수 있게 만드는 버튼을 생성합니다.
+     * myPet을 움직일 수 있게 만드는 버튼을 생성합니다.
      * @since 2016.08.05
      */
     GUI.openMoveButton = function () {
@@ -534,7 +534,7 @@ function newLevel() {
     };
 
     /**
-     * myPet을 움직일수 있게 만드는 버튼을 제거합니다.
+     * myPet을 움직일 수 있게 만드는 버튼을 제거합니다.
      * @since 2016.08.07
      */
     GUI.openMoveButton = function () {
@@ -639,7 +639,7 @@ function newLevel() {
     "use strict";
 
     /**
-     * 뛰어쓰기용 위젯을 반환합니다.
+     * 띄어쓰기용 위젯을 반환합니다.
      * @since 2016.08.05
      */
     widget.space = () => {
