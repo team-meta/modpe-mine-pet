@@ -41,14 +41,14 @@ function modTick() {
     if (myPet !== null) {
         if (myPet.mode == 0) {
             Entity.setImmobile(myPet.entity, false);
-            if (myPet.target !== null) {
+            if (myPet.target !== null) { //if target is not set
                 Entity.grab(myPet.entity, myPet.target, myPet.speed);
-            } else { //if target is setting
+            } else { //if target is set
                 Entity.grab(myPet.entity, myPet.target, myPet.speed); //following the target
                 /** dmg the target **/
-                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target!) {
-                    Entity.grab(myPet.target, myPet.entity, myPet.speed);
-                    Entity.dmg(myPet.target, -myPet.dmg);
+                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target !== null) {
+                    Entity.grab(myPet.target, myPet.entity, myPet.speed); //push the target
+                    Entity.dmg(myPet.target, -myPet.dmg); //damage the target
                 }
             }
         }
@@ -151,11 +151,11 @@ function newLevel() {
 }
 
 /**
- * GUI의 Basic Source 입니다.
+ * GUI
  * @since 2016.08.05
  */
 (GUI => {
-	"use strict";
+    "use strict";
 
     GUI.sheet = BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/spritesheet.png"));
     GUI.touchGUI = BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/gui/touchgui.png"));
@@ -211,7 +211,7 @@ function newLevel() {
      * newLevel함수에 호출되는 메인 버튼을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.open = function() {
+    GUI.open = () => {
         GUI.runOnUiThread(ctx, function() {
             var mainButton = new Button(ctx);
             var mainLayout = new RelativeLayout(ctx);
@@ -229,7 +229,7 @@ function newLevel() {
      * newLevel함수에 호출되는 메인 버튼을 제거합니다.
      * @since 2016.08.05
      */
-    GUI.close = function() {
+    GUI.close = () => {
         GUI.runOnUiThread(ctx, function() {
             if (GUI.mainWindow !== null) GUI.mainWindow.dismiss();
             GUI.mainWindow = null;
@@ -240,7 +240,7 @@ function newLevel() {
      * open버튼을 클릭할시 생성되는 메인 메뉴를 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openMenu = function() {
+    GUI.openMenu = () => {
         if (myPet != null) {
             GUI.runOnUiThread(ctx, function() {
                 var layout = new LinearLayout(ctx);
@@ -328,7 +328,7 @@ function newLevel() {
                     .getDecorView(), RIGHT | BOTTOM, 0, 0);
             });
         } else {
-            print("펫이 존재하지 않습니다.");
+            print("이름표로 엔티티를 터치하여 펫으로 만들어주세요!");
         }
     };
 
@@ -336,7 +336,7 @@ function newLevel() {
      * open버튼을 클릭할시 생성되는 메인 메뉴를 제거합니다.
      * @since 2016.08.05
      */
-    GUI.closeMenu = function() {
+    GUI.closeMenu = () => {
         GUI.runOnUiThread(ctx, function() {
             if (GUI.menuWindow !== null) GUI.menuWindow.dismiss();
             GUI.menuWindow = null;
@@ -347,7 +347,7 @@ function newLevel() {
      * 버튼에 따라 여러가지 옵션창을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openOption = function(id) {
+    GUI.openOption = (id) => {
         switch (id) {
             case 0:
                 GUI.openHealth();
@@ -362,21 +362,24 @@ function newLevel() {
     };
 
     /**
+    * 일정한 텍스트를 반복하여 반환합니다
+    * @param {String} text 반복할 문자
+    * @param {Number} n 반복할 횟수
+    */
+    GUI.getMultiText = (text, n) => {
+      let str = "";
+      for(var i = 0; i < n; i++) str += text;
+      return str;
+    };
+
+    /**
      * myPet의 체력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openHealth = function() {
+    GUI.openHealth = () => {
         GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
-
-            function getHeart(n) {
-                var text = "";
-                for (var i = 0; i < n; i++) {
-                    text += "†";
-                }
-                return text;
-            }
 
             var title = new TextView(ctx);
             title.setText("Health");
@@ -393,10 +396,10 @@ function newLevel() {
             healthView.setGravity(CENTER);
             healthView.setTextColor(RED);
             healthView.setTextSize(16);
-            healthView.setText(getHeart(Entity.getHealth(myPet.entity)));
+            healthView.setText(GUI.getMultiText("0", Entity.getHealth(myPet.entity)));
 
-            var button = new Button(ctx);
-            button.setText("heal");
+            var button = new ImageView(ctx);
+            button.setImageBitmap(itemImageLoader.getImage(364, 0));
             GUI.setClickEffect(button);
             GUI.onClick(button, function() {
                 let meal = [364];
@@ -404,6 +407,9 @@ function newLevel() {
                     var slot = Player.getInventorySlot(i);
                     if (meal.indexOf(slot) != -1) {
                         Entity.dmg(myPet.entity, 4);
+                        for(var i = 0; i < 4; i++) {
+                          Entity.particle.add(myPet.entity, 0, 0, 0, ParticleType.hear, 4);
+                        }
                         Player.setInventorySlot(i, slot, Player.getInventorySlotCount(i) - 1, Player.getInventorySlotData(i));
                         break;
                     }
@@ -422,18 +428,10 @@ function newLevel() {
      * myPet의 속력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openSpeed = function() {
+    GUI.openSpeed = () => {
         GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
-
-            function getSpeed(n) {
-                var text = "";
-                for (var i = 0; i < n; i++) {
-                    text += "†";
-                }
-                return text;
-            }
 
             var title = new TextView(ctx);
             title.setText("speed");
@@ -450,17 +448,20 @@ function newLevel() {
             speedView.setGravity(CENTER);
             speedView.setTextColor(RED);
             speedView.setTextSize(16);
-            speedView.setText(getSpeed(myPet.speed));
+            speedView.setText(GUI.getMultiText("1" ,myPet.speed));
 
-            var button = new Button(ctx);
-            button.setText("heal");
+            var button = new ImageView(ctx);
+            button.setImageBitmap(itemImageLoader.getImage(364, 0));
             GUI.setClickEffect(button);
             GUI.onClick(button, function() {
                 let meal = [364];
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
                     if (meal.indexOf(slot) != -1) {
-                        Entity.dmg(myPet.entity, 4);
+                        myPet.speed += 2;
+                        for(var i = 0; i < 4; i++) {
+                          Entity.particle.add(myPet.entity, 0, 0, 0, ParticleType.splash, 4);
+                        }
                         Player.setInventorySlot(i, slot, Player.getInventorySlotCount(i) - 1, Player.getInventorySlotData(i));
                         break;
                     }
@@ -479,18 +480,10 @@ function newLevel() {
      * myPet의 공격력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openDamage = function() {
+    GUI.openDamage = () => {
         GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
-
-            function getHeart(n) {
-                var text = "";
-                for (var i = 0; i < n; i++) {
-                    text += "†";
-                }
-                return text;
-            }
 
             var title = new TextView(ctx);
             title.setText("Damage");
@@ -503,19 +496,20 @@ function newLevel() {
             layout.addView(GUI.widget.line(2, WHITE));
             layout.addView(GUI.widget.space());
 
-            var heatlhView = new TextView(ctx);
-            healthView.setGravity(CENTER);
-            healthView.setTextColor(RED);
-            healthView.setTextSize(16);
+            var damageView = new TextView(ctx);
+            damageView.setGravity(CENTER);
+            damageView.setTextColor(RED);
+            damageView.setTextSize(16);
+            damageView.setText(GUI.getMultiText("2", myPet.dmg));
 
             var button = new Button(ctx);
-            button.setText("heal");
+            button.setImageBitmap(itemImageLoader.getImage(364, 0));
             GUI.setClickEffect(button);
             GUI.onClick(button, function() {
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
                     if (meal.indexOf(slot) != -1) {
-                        Entity.dmg(myPet.entity, 4);
+                        myPet.dmg ++;
                         Player.setInventorySlot(i, slot, Player.getInventorySlotCount(i) - 1, Player.getInventorySlotData(i));
                         break;
                     }
@@ -533,7 +527,7 @@ function newLevel() {
      * myPet을 움직일수 있게 만드는 버튼을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openMoveButton = function() {
+    GUI.openMoveButton = () => {
         if (GUI.isMove == false) {
             GUI.runOnUiThread(ctx, function() {
                 var layout = new RelativeLayout(ctx);
@@ -555,7 +549,7 @@ function newLevel() {
      * myPet을 움직일수 있게 만드는 버튼을 제거합니다.
      * @since 2016.08.07
      */
-    GUI.openMoveButton = function() {
+    GUI.openMoveButton = () => {
         if (GUI.isMove == true) {
             GUI.runOnUiThread(ctx, function() {
                 if (GUI.moveButtonWindow !== null) GUI.moveButtonWindow.dismiss();
@@ -571,7 +565,7 @@ function newLevel() {
      * @param {Context} ctx Activity
      * @param {Function} content 실행할 함수
      */
-    GUI.runOnUiThread = function(ctx, content) {
+    GUI.runOnUiThread = (ctx, content) => {
         ctx.runOnUiThread(new Runnable({
             run: function() {
                 try {
@@ -588,8 +582,9 @@ function newLevel() {
      * @since 2016.08.05
      * @param {Widget} view 해당위젯
      */
-    GUI.setClickEffect = function(view) {
+    GUI.setClickEffect = (view) => {
         GUI.runOnUiThread(ctx, function() {
+            view.setClickable(true);
             view.setBackgroundDrawable(GUI.buttonNormal());
             GUI.onTouch(view, function(v) {
                 view.setBackgroundDrawable(GUI.buttonPress());
@@ -598,8 +593,16 @@ function newLevel() {
             });
         });
     };
-    GUI.onClick = function(view, content) {
+
+    /**
+     * 버튼클릭시
+     * @since 2016.08.05
+     * @param {Widget} view 해당위젯
+     * @param {Function} content 실행함수
+     */
+    GUI.onClick = (view, content) => {
         GUI.runOnUiThread(this.ctx, function() {
+            view.setClickable(true);
             view.setOnClickListener(new View.OnClickListener({
                 onClick: function(v) {
                     if (content != null) content(v);
@@ -607,8 +610,16 @@ function newLevel() {
             }));
         });
     };
-    GUI.onLongClick = function(view, content) {
+
+    /**
+     * 버튼을 길게 누를시
+     * @since 2016.08.05
+     * @param {Widget} view 해당위젯
+     * @param {Function} content 실행함수
+     */
+    GUI.onLongClick = (view, content) => {
         GUI.runOnUiThread(this.ctx, function() {
+            view.setClickable(true);
             view.setOnLongClickListener(new View.OnLongClickListener({
                 onLongClick: function() {
                     if (content != null) content();
@@ -617,8 +628,18 @@ function newLevel() {
             }));
         });
     };
-    GUI.onTouch = function(view, func, func2, func3) {
+
+    /**
+     * 버튼을 터치할시
+     * @since 2016.08.05
+     * @param {Widget} view 해당위젯
+     * @param {Function} func 버튼에 손댔을때 실행함수
+     * @param {Function} func2 버튼에 손땠을때 실행함수
+     * @param {Function} func3 버튼에 손을 대고있을때
+     */
+    GUI.onTouch = (view, func, func2, func3) => {
         GUI.runOnUiThread(this.ctx, function() {
+            view.setClickable(true);
             view.setOnTouchListener(new android.view.View.OnTouchListener({
                 onTouch: function(v, event) {
                     switch (event.action) {
@@ -642,33 +663,82 @@ function newLevel() {
 })(GUI);
 
 (widget => {
+    "use strict";
+
+    /**
+     * 뛰어쓰기용 위젯을 반환합니다.
+     * @since 2016.08.05
+     */
+    widget.space = function() => {
+        var text = new TextView(ctx);
+        text.setText("");
+        text.setTextSize(2);
+        return text;
+    };
+
+    /**
+     * Line 위젯을 반환합니다.
+     * @since 2016.08.05
+     * @param {Number} size 크기
+     * @param {Color} color 색
+     */
+    widget.line = (size, color) => {
+        var line = new TextView(ctx);
+        line.setText("");
+        line.setTextSize(size);
+        line.setBackgroundDrawable(new ColorDrawable(color));
+        return line;
+    };
+})(GUI.widget || (GUI.widget = {}));
+
+/**
+ * @file itemImageLoader
+ * @author Adagio <magicwho@naver.com>
+ * @since 2016-08-21
+ * @version 1.0
+ */
+
+/**
+ * @namespace itemImageLoader
+ */
+(itemImageLoader => {
 	"use strict";
 
+	itemImageLoader.uvs = eval(new java.lang.String(ModPE.getBytesFromTexturePack("images/items.meta")) + "");
+	itemImageLoader.sheet = BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/items-opaque.png"));
+
 	/**
-	 * 뛰어쓰기용 위젯을 반환합니다.
-	 * @since 2016.08.05
+	 * 아이템 코드를 아이템 이름으로 변경
+	 * @param {Number} itemCode 아이템코드
 	 */
-	widget.space = function() => {
-			var text = new TextView(ctx);
-			text.setText("");
-			text.setTextSize(2);
-			return text;
+	itemImageLoader.item2name = (itemCode) => {
+		return net.zhuoweizhang.mcpelauncher.ScriptManager.nativeGetItemName(number, 0, false);
+	}
+
+	/**
+	 * 아이템비트맵을 반환합니다.
+	 * @param {Number} element 아이템 이름
+	 * @param {Number} type 아이템 타입
+	 */
+	itemImageLoader.makeBitmap = (name, type) => {
+		for(var i = 0, max = this.uvs.length; i < max; i++) {
+			var obj = this.uvs[i];
+			if(obj.name === name) {
+				return Bitmap.createBitmap(this.sheet, obj.uvs[type][0], obj.uvs[type][1], 16, 16);
+			}
+		}
 	};
 
 	/**
-	 * Line 위젯을 반환합니다.
-	 * @since 2016.08.05
-	 * @param {Number} size 크기
-	 * @param {Color} color 색
+	 * 아이템비트맵을 반환합니다.
+	 * @param {Number} element 아이템 이름 or 아이템 코드
+	 * @param {Number} type 아이템 타입
 	 */
-	widget.line = (size, color) => {
-			var line = new TextView(ctx);
-			line.setText("");
-			line.setTextSize(size);
-			line.setBackgroundDrawable(new ColorDrawable(color));
-			return line;
-	};
-})(GUI.widget || (GUI.widget = {}));
+	itemImageLoader.getImage = (element, type) => {
+		if(typeof element === "string") itemImageLoader.makeBitmap(element, type);
+		if(typeof element === "number") itemImageLoader.makeBitmap(itemImageLoader.item2name(element), type);
+	}
+})(itemImageLoader);
 
 /**
  * @file
