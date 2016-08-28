@@ -4,8 +4,8 @@
  *
  * @since 2016.8.1
  */
-var GUI;
-
+var GUI = {},
+  itemImageLoader = {};
 ModPE.setItem(500, "name_tag", 0, "Name Tag");
 var myPet = null;
 
@@ -49,7 +49,7 @@ function modTick() {
             } else { //if target is setting
                 Entity.grab(myPet.entity, myPet.target, myPet.speed); //following the target
                 /** dmg the target **/
-                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target!) {
+                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target !== null) {
                     // Syntax error but I can't understand what this line means.
                     Entity.grab(myPet.target, myPet.entity, myPet.speed);
                     Entity.dmg(myPet.target, -myPet.dmg);
