@@ -198,6 +198,7 @@ function newLevel() {
                 GUI.openMenu();
             });
             GUI.setClickEffect(mainButton);
+            mainLayout.addView(mainButton);
             GUI.mainWindow = new PopupWindow(mainLayout, dp(48), dp(48), false);
             GUI.mainWindow.showAtLocation(ctx.getWindow()
                 .getDecorView(), RIGHT | BOTTOM, 0, 0);
