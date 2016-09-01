@@ -67,17 +67,17 @@ function makePet(entity) {
     this.uid = Entity.getUniqueId(entity);
     myPet = this;
 }
-makePet.prototype.setName = function (name) {
+makePet.prototype.setName = function(name) {
     this.name = name;
     Entity.setNameTag(this.entity, this.name);
 };
-makePet.prototype.setHealth = function (hp) {
+makePet.prototype.setHealth = function(hp) {
     Entity.setHealth(this.entity, hp);
 };
-makePet.prototype.setTarget = function (entity) {
+makePet.prototype.setTarget = function(entity) {
     this.target = entity;
 };
-makePet.prototype.move = function () {
+makePet.prototype.move = function() {
     Entity.push(this.entity, 70 * this.speed / 100);
 };
 
@@ -189,11 +189,11 @@ function newLevel() {
      * newLevel 함수에 호출되는 메인 버튼을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.open = function () {
-        GUI.runOnUiThread(ctx, function () {
+    GUI.open = function() {
+        GUI.runOnUiThread(ctx, function() {
             var mainButton = new Button(ctx);
             var mainLayout = new RelativeLayout(ctx);
-            GUI.onClick(mainButton, function () {
+            GUI.onClick(mainButton, function() {
                 GUI.openMenu();
             });
             GUI.setClickEffect(mainButton);
@@ -208,8 +208,8 @@ function newLevel() {
      * newLevel 함수에 호출되는 메인 버튼을 제거합니다.
      * @since 2016.08.05
      */
-    GUI.close = function () {
-        GUI.runOnUiThread(ctx, function () {
+    GUI.close = function() {
+        GUI.runOnUiThread(ctx, function() {
             if (GUI.mainWindow !== null) {
                 GUI.mainWindow.dismiss();
             }
@@ -221,9 +221,9 @@ function newLevel() {
      * open 버튼을 클릭할 시 생성되는 메인 메뉴를 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openMenu = function () {
-        if (myPet !== null) {
-            GUI.runOnUiThread(ctx, function () {
+    GUI.openMenu = function() {
+        GUI.runOnUiThread(ctx, function() {
+            if (myPet !== null) {
                 var layout = new LinearLayout(ctx);
                 layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
@@ -242,7 +242,7 @@ function newLevel() {
                 healthButton.setText("체력:" + Entity.getHealth(myPet.entity));
                 healthButton.setTextColor(WHITE);
                 healthButton.setId(0);
-                GUI.onClick(healthButton, function (v) {
+                GUI.onClick(healthButton, function(v) {
                     GUI.openOption(v.getId());
                 });
                 layout.addView(healthButton);
@@ -253,7 +253,7 @@ function newLevel() {
                 speedButton.setText("속력");
                 speedButton.setTextColor(WHITE);
                 speedButton.setId(1);
-                GUI.onClick(speedButton, function (v) {
+                GUI.onClick(speedButton, function(v) {
                     GUI.openOption(v.getId());
                 });
                 layout.addView(speedButton);
@@ -264,7 +264,7 @@ function newLevel() {
                 speedButton.setText("공격력");
                 speedButton.setTextColor(WHITE);
                 speedButton.setId(2);
-                GUI.onClick(speedButton, function (v) {
+                GUI.onClick(speedButton, function(v) {
                     GUI.openOption(v.getId());
                 });
                 layout.addView(speedButton);
@@ -274,7 +274,7 @@ function newLevel() {
                 var modeButton = new Button(ctx);
                 modeButton.setText((myPet.mode === 0 ? "걷기" : "앉기"));
                 modeButton.setTextColor(WHITE);
-                GUI.onClick(modeButton, function (v) {
+                GUI.onClick(modeButton, function(v) {
                     myPet.mode++;
                     if (myPet.mode === 3) {
                         myPet.mode = 0;
@@ -304,7 +304,7 @@ function newLevel() {
                 settingButton.setText("설정");
                 settingButton.setTextColor(WHITE);
                 settingButton.setId(3);
-                GUI.onClick(settingButton, function (v) {
+                GUI.onClick(settingButton, function(v) {
 
                 });
                 layout.addView(settingButton);
@@ -313,18 +313,19 @@ function newLevel() {
                 GUI.menuWindow.setBackgroundDrawable(GUI.window());
                 GUI.menuWindow.showAtLocation(ctx.getWindow()
                     .getDecorView(), RIGHT | BOTTOM, 0, 0);
-            });
-        } else {
-            print("펫이 존재하지 않습니다.");
-        }
+
+            } else {
+                print("펫이 존재하지 않습니다.");
+            }
+        });
     };
 
     /**
      * open 버튼을 클릭할 시 생성되는 메인 메뉴를 제거합니다.
      * @since 2016.08.05
      */
-    GUI.closeMenu = function () {
-        GUI.runOnUiThread(ctx, function () {
+    GUI.closeMenu = function() {
+        GUI.runOnUiThread(ctx, function() {
             if (GUI.menuWindow !== null) {
                 GUI.menuWindow.dismiss();
             }
@@ -336,17 +337,17 @@ function newLevel() {
      * 버튼에 따라 여러가지 옵션창을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openOption = function (id) {
+    GUI.openOption = function(id) {
         switch (id) {
-        case 0:
-            GUI.openHealth();
-            break;
-        case 1:
-            GUI.openSpeed();
-            break;
-        case 2:
-            GUI.openDamage();
-            break;
+            case 0:
+                GUI.openHealth();
+                break;
+            case 1:
+                GUI.openSpeed();
+                break;
+            case 2:
+                GUI.openDamage();
+                break;
         }
     };
 
@@ -354,8 +355,8 @@ function newLevel() {
      * myPet의 체력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openHealth = function () {
-        GUI.runOnUiThread(ctx, function () {
+    GUI.openHealth = function() {
+        GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
@@ -387,7 +388,7 @@ function newLevel() {
             var button = new Button(ctx);
             button.setText("heal");
             GUI.setClickEffect(button);
-            GUI.onClick(button, function () {
+            GUI.onClick(button, function() {
                 let meal = [364];
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
@@ -411,8 +412,8 @@ function newLevel() {
      * myPet의 속력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openSpeed = function () {
-        GUI.runOnUiThread(ctx, function () {
+    GUI.openSpeed = function() {
+        GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
@@ -444,7 +445,7 @@ function newLevel() {
             var button = new Button(ctx);
             button.setText("heal");
             GUI.setClickEffect(button);
-            GUI.onClick(button, function () {
+            GUI.onClick(button, function() {
                 let meal = [364];
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
@@ -468,8 +469,8 @@ function newLevel() {
      * myPet의 공격력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openDamage = function () {
-        GUI.runOnUiThread(ctx, function () {
+    GUI.openDamage = function() {
+        GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
@@ -492,7 +493,7 @@ function newLevel() {
             var button = new Button(ctx);
             button.setText("heal");
             GUI.setClickEffect(button);
-            GUI.onClick(button, function () {
+            GUI.onClick(button, function() {
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
                     if (meal.indexOf(slot) !== -1) {
@@ -515,13 +516,13 @@ function newLevel() {
      * myPet을 움직일 수 있게 만드는 버튼을 생성합니다.
      * @since 2016.08.05
      */
-    GUI.openMoveButton = function () {
+    GUI.openMoveButton = function() {
         if (!GUI.isMove) {
-            GUI.runOnUiThread(ctx, function () {
+            GUI.runOnUiThread(ctx, function() {
                 var layout = new RelativeLayout(ctx);
                 var button = new Button(ctx);
                 GUI.setClickEffect(button);
-                GUI.onClick(button, function (v) {
+                GUI.onClick(button, function(v) {
                     myPet.move();
                 });
 
@@ -537,9 +538,9 @@ function newLevel() {
      * myPet을 움직일 수 있게 만드는 버튼을 제거합니다.
      * @since 2016.08.07
      */
-    GUI.openMoveButton = function () {
+    GUI.openMoveButton = function() {
         if (GUI.isMove) {
-            GUI.runOnUiThread(ctx, function () {
+            GUI.runOnUiThread(ctx, function() {
                 if (GUI.moveButtonWindow !== null) {
                     GUI.moveButtonWindow.dismiss();
                 }
@@ -555,9 +556,9 @@ function newLevel() {
      * @param {Context} ctx Activity
      * @param {Function} content 실행할 함수
      */
-    GUI.runOnUiThread = function (ctx, content) {
+    GUI.runOnUiThread = function(ctx, content) {
         ctx.runOnUiThread(new Runnable({
-            run: function () {
+            run: function() {
                 try {
                     content();
                 } catch (error) {
@@ -572,20 +573,20 @@ function newLevel() {
      * @since 2016.08.05
      * @param {Widget} view 해당위젯
      */
-    GUI.setClickEffect = function (view) {
-        GUI.runOnUiThread(ctx, function () {
+    GUI.setClickEffect = function(view) {
+        GUI.runOnUiThread(ctx, function() {
             view.setBackgroundDrawable(GUI.buttonNormal());
-            GUI.onTouch(view, function (v) {
+            GUI.onTouch(view, function(v) {
                 view.setBackgroundDrawable(GUI.buttonPress());
-            }, function () {
+            }, function() {
                 view.setBackgroundDrawable(GUI.buttonNormal());
             });
         });
     };
-    GUI.onClick = function (view, content) {
-        GUI.runOnUiThread(this.ctx, function () {
+    GUI.onClick = function(view, content) {
+        GUI.runOnUiThread(this.ctx, function() {
             view.setOnClickListener(new View.OnClickListener({
-                onClick: function (v) {
+                onClick: function(v) {
                     if (content !== null) {
                         content(v);
                     }
@@ -593,10 +594,10 @@ function newLevel() {
             }));
         });
     };
-    GUI.onLongClick = function (view, content) {
-        GUI.runOnUiThread(this.ctx, function () {
+    GUI.onLongClick = function(view, content) {
+        GUI.runOnUiThread(this.ctx, function() {
             view.setOnLongClickListener(new View.OnLongClickListener({
-                onLongClick: function () {
+                onLongClick: function() {
                     if (content !== null) {
                         content();
                     }
@@ -605,28 +606,28 @@ function newLevel() {
             }));
         });
     };
-    GUI.onTouch = function (view, func, func2, func3) {
-        GUI.runOnUiThread(this.ctx, function () {
+    GUI.onTouch = function(view, func, func2, func3) {
+        GUI.runOnUiThread(this.ctx, function() {
             view.setOnTouchListener(new android.view.View.OnTouchListener({
-                onTouch: function (v, event) {
+                onTouch: function(v, event) {
                     switch (event.action) {
-                    case android.view.MotionEvent.ACTION_DOWN: //버튼에 손 댔을 때
-                        if (func !== null) {
-                            func();
-                        }
-                        break;
+                        case android.view.MotionEvent.ACTION_DOWN: //버튼에 손 댔을 때
+                            if (func !== null) {
+                                func();
+                            }
+                            break;
 
-                    case android.view.MotionEvent.ACTION_UP: //버튼에서 손 땟을때
-                        if (func2 !== null) {
-                            func2();
-                        }
-                        break;
+                        case android.view.MotionEvent.ACTION_UP: //버튼에서 손 땟을때
+                            if (func2 !== null) {
+                                func2();
+                            }
+                            break;
 
-                    case android.view.MotionEvent.ACTION_MOVE:
-                        if (func3 !== null) {
-                            func3();
-                        }
-                        break;
+                        case android.view.MotionEvent.ACTION_MOVE:
+                            if (func3 !== null) {
+                                func3();
+                            }
+                            break;
                     }
                     return false;
                 }
