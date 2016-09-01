@@ -4,72 +4,7 @@
  *
  * @since 2016.8.1
  */
-var GUI = {},
-  itemImageLoader = {};
-ModPE.setItem(500, "name_tag", 0, "Name Tag");
-var myPet = null;
-
-function makePet(entity) {
-    this.entity = entity;
-    this.name = "이름을 지어주세요!";
-    Entity.setNameTag(this.entity, this.name);
-    this.target = null;
-    this.dmg = 5;
-    this.speed = 50;
-    this.mode = 0; //0 = walk, 1 = sit, 2 = ride
-    this.uid = Entity.getUniqueId(entity);
-    myPet = this;
-}
-makePet.prototype.setName = function (name) {
-    this.name = name;
-    Entity.setNameTag(this.entity, this.name);
-};
-makePet.prototype.setHealth = function (hp) {
-    Entity.setHealth(this.entity, hp);
-};
-makePet.prototype.setTarget = function (entity) {
-    this.target = entity;
-};
-makePet.prototype.move = function () {
-    Entity.push(this.entity, 70 * this.speed / 100);
-};
-
-function attackHook(a, v) {
-    if (Player.getCarriedItem() === 500) {
-        makePet(v);
-    }
-}
-
-function modTick() {
-    if (myPet !== null) {
-        if (myPet.mode === 0) {
-            Entity.setImmobile(myPet.entity, false);
-            if (myPet.target !== null) {
-                Entity.grab(myPet.entity, myPet.target, myPet.speed);
-            } else { //if target is setting
-                Entity.grab(myPet.entity, myPet.target, myPet.speed); //following the target
-                /** dmg the target **/
-                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target !== null) {
-                    // Syntax error but I can't understand what this line means.
-                    Entity.grab(myPet.target, myPet.entity, myPet.speed);
-                    Entity.dmg(myPet.target, -myPet.dmg);
-                }
-            }
-        }
-        if (myPet.mode === 1) {
-            Entity.setSneaking(myPet.entity, true);
-            Entity.setImmobile(myPet.entity, false);
-        }
-        if (myPet.mode === 2) {
-            Entity.setImmobile(myPet.entity, true);
-            GUI.openMoveButton();
-        } else {
-            GUI.deleteMoveButton();
-        }
-    }
-}
-
-var Bitmap = android.graphics.Bitmap,
+const Bitmap = android.graphics.Bitmap,
     BitmapFactory = android.graphics.BitmapFactory,
     Color = android.graphics.Color,
     ColorDrawable = android.graphics.drawable.ColorDrawable,
@@ -113,17 +48,81 @@ var Bitmap = android.graphics.Bitmap,
     PURPLE = Color.parseColor("#BA68C8"),
     DEEP_PURPLE = Color.parseColor("#7E57C2"),
     PINK = Color.parseColor("#F06292"),
-    density = ctx.getResources()
-    .getDisplayMetrics()
-    .density;
+    density = ctx.getResources().getDisplayMetrics().density;
 
-var dp = function (pixel) {
-    return Math.ceil(pixel * density);
+let GUI = {},
+    itemImageLoader = {},
+    myPet = null;
+
+ModPE.setItem(500, "name_tag", 0, "Name Tag");
+
+function makePet(entity) {
+    this.entity = entity;
+    this.name = "이름을 지어주세요!";
+    Entity.setNameTag(this.entity, this.name);
+    this.target = null;
+    this.dmg = 5;
+    this.speed = 50;
+    this.mode = 0; //0 = walk, 1 = sit, 2 = ride
+    this.uid = Entity.getUniqueId(entity);
+    myPet = this;
+}
+makePet.prototype.setName = function (name) {
+    this.name = name;
+    Entity.setNameTag(this.entity, this.name);
 };
+makePet.prototype.setHealth = function (hp) {
+    Entity.setHealth(this.entity, hp);
+};
+makePet.prototype.setTarget = function (entity) {
+    this.target = entity;
+};
+makePet.prototype.move = function () {
+    Entity.push(this.entity, 70 * this.speed / 100);
+};
+
+
+
+function dp(pixel) {
+    return Math.ceil(pixel * density);
+}
+
+function attackHook(a, v) {
+    if (Player.getCarriedItem() === 500) {
+        makePet(v);
+    }
+}
+
+function modTick() {
+    if (myPet !== null) {
+        if (myPet.mode === 0) {
+            Entity.setImmobile(myPet.entity, false);
+            if (myPet.target === null) {
+                Entity.grab(myPet.entity, myPet.target, myPet.speed);
+                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target !== null) {
+                    Entity.grab(myPet.target, myPet.entity, myPet.speed);
+                    Entity.dmg(myPet.target, -myPet.dmg);
+                }
+            } else {
+                Entity.grab(myPet.entity, myPet.target, myPet.speed);
+            }
+        } else if (myPet.mode === 1) {
+            Entity.setSneaking(myPet.entity, true);
+            Entity.setImmobile(myPet.entity, false);
+        } else if (myPet.mode === 2) {
+            Entity.setImmobile(myPet.entity, true);
+            GUI.openMoveButton();
+        } else {
+            GUI.deleteMoveButton();
+        }
+    }
+}
 
 function newLevel() {
     GUI.open();
 }
+
+
 
 /**
  * GUI의 Basic Source 입니다.
