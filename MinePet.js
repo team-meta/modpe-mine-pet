@@ -54,7 +54,7 @@ let GUI = {},
     itemImageLoader = {},
     myPet = null;
 
-ModPE.setItem(500, "name_tag", 0, "Name Tag");
+ModPE.setItem(700, "name_tag", 0, "Name Tag");
 
 function makePet(entity) {
     this.entity = entity;
@@ -120,6 +120,7 @@ function modTick() {
 
 function newLevel() {
     GUI.open();
+    Player.addItemCreativeInv(700, 2, 0);
 }
 
 
@@ -154,17 +155,17 @@ function newLevel() {
         var drawable = new NinePatchDrawable(ctx.getResources(), bitmap, buffer.array(), new android.graphics.Rect(), null);
         return drawable;
     };
-    GUI.buttonNormal = () => {
+    GUI.buttonNormal = function() {
         var bitmap = Bitmap.createBitmap(GUI.sheet, 8, 32, 8, 8);
         var bit = Bitmap.createScaledBitmap(bitmap, dp(16), dp(16), false);
         return GUI.createNinePatch(bit, dp(4), dp(4), dp(12), dp(14));
     };
-    GUI.buttonPress = () => {
+    GUI.buttonPress = function() {
         var bitmap = Bitmap.createBitmap(GUI.sheet, 0, 32, 8, 8);
         var bit = Bitmap.createScaledBitmap(bitmap, dp(16), dp(16), false);
         return GUI.createNinePatch(bit, dp(4), dp(4), dp(12), dp(14));
     };
-    GUI.window = () => {
+    GUI.window = function() {
         var bitmap = Bitmap.createBitmap(GUI.sheet, 1, 1, 14, 14);
         bitmap.setPixel(0, 0, 0x00000001);
         bitmap.setPixel(13, 13, 0x00000001);
@@ -575,16 +576,26 @@ function newLevel() {
      */
     GUI.setClickEffect = function(view) {
         GUI.runOnUiThread(ctx, function() {
-            view.setBackgroundDrawable(GUI.buttonNormal());
-            GUI.onTouch(view, function(v) {
-                view.setBackgroundDrawable(GUI.buttonPress());
-            }, function() {
-                view.setBackgroundDrawable(GUI.buttonNormal());
-            });
-        });
+          view.setBackgroundDrawable(GUI.buttonNormal());
+            view.setOnTouchListener(new View.OnTouchListener({
+                onTouch: function(v, event) {
+                    switch (event.action) {
+                        case android.view.MotionEvent.ACTION_DOWN: //버튼에 손 댔을 때
+                            view.setBackgroundDrawable(GUI.buttonPress());
+                            break;
+
+                        case android.view.MotionEvent.ACTION_UP: //버튼에서 손 땟을때
+                            view.setBackgroundDrawable(GUI.buttonNormal());
+                            break;
+                    }
+                    return false;
+                }
+            }));
+        }
     };
+
     GUI.onClick = function(view, content) {
-        GUI.runOnUiThread(this.ctx, function() {
+        GUI.runOnUiThread(ctx, function() {
             view.setOnClickListener(new View.OnClickListener({
                 onClick: function(v) {
                     if (content !== null) {
@@ -594,8 +605,9 @@ function newLevel() {
             }));
         });
     };
+
     GUI.onLongClick = function(view, content) {
-        GUI.runOnUiThread(this.ctx, function() {
+        GUI.runOnUiThread(ctx, function() {
             view.setOnLongClickListener(new View.OnLongClickListener({
                 onLongClick: function() {
                     if (content !== null) {
@@ -606,26 +618,27 @@ function newLevel() {
             }));
         });
     };
+
     GUI.onTouch = function(view, func, func2, func3) {
-        GUI.runOnUiThread(this.ctx, function() {
-            view.setOnTouchListener(new android.view.View.OnTouchListener({
+        GUI.runOnUiThread(ctx, function() {
+            view.setOnTouchListener(new View.OnTouchListener({
                 onTouch: function(v, event) {
                     switch (event.action) {
                         case android.view.MotionEvent.ACTION_DOWN: //버튼에 손 댔을 때
                             if (func !== null) {
-                                func();
+                                func(v);
                             }
                             break;
 
                         case android.view.MotionEvent.ACTION_UP: //버튼에서 손 땟을때
                             if (func2 !== null) {
-                                func2();
+                                func2(v);
                             }
                             break;
 
                         case android.view.MotionEvent.ACTION_MOVE:
                             if (func3 !== null) {
-                                func3();
+                                func3(v);
                             }
                             break;
                     }
