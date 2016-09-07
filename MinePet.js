@@ -81,22 +81,22 @@ makePet.prototype.move = function() {
     Entity.push(this.entity, 70 * this.speed / 100);
 };
 
-
-
 function dp(pixel) {
     return Math.ceil(pixel * density);
 }
 
 function attackHook(a, v) {
-    if (Player.getCarriedItem() === 500) {
+    if (Player.getCarriedItem() == 700) {
+        preventDefault();
         makePet(v);
+        print("펫으로 설정했습니다.");
     }
 }
 
 function modTick() {
     if (myPet !== null) {
         if (myPet.mode === 0) {
-            Entity.setImmobile(myPet.entity, false);
+            //Entity.setImmobile(myPet.entity, false);
             if (myPet.target === null) {
                 Entity.grab(myPet.entity, myPet.target, myPet.speed);
                 if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target !== null) {
@@ -104,16 +104,19 @@ function modTick() {
                     Entity.dmg(myPet.target, -myPet.dmg);
                 }
             } else {
-                Entity.grab(myPet.entity, myPet.target, myPet.speed);
+                Entity.grab(myPet.entity, Player.getEntity(), myPet.speed);
             }
-        } else if (myPet.mode === 1) {
-            Entity.setSneaking(myPet.entity, true);
-            Entity.setImmobile(myPet.entity, false);
-        } else if (myPet.mode === 2) {
-            Entity.setImmobile(myPet.entity, true);
-            GUI.openMoveButton();
-        } else {
-            GUI.deleteMoveButton();
+        }
+        if (myPet.mode === 1) {
+            //Entity.setSneaking(myPet.entity, true);
+            //Entity.setImmobile(myPet.entity, false);
+        }
+        if (myPet.mode === 2) {
+            //Entity.setImmobile(myPet.entity, true);
+            //GUI.openMoveButton();
+        }
+        if(myPet.mode !== 2) {
+            //GUI.deleteMoveButton();
         }
     }
 }
@@ -226,6 +229,7 @@ function newLevel() {
         GUI.runOnUiThread(ctx, function() {
             if (myPet !== null) {
                 var layout = new LinearLayout(ctx);
+                layout.setOrientation(1);
                 layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
                 var title = new TextView(ctx);
@@ -243,6 +247,7 @@ function newLevel() {
                 healthButton.setText("체력:" + Entity.getHealth(myPet.entity));
                 healthButton.setTextColor(WHITE);
                 healthButton.setId(0);
+                GUI.setClickEffect(healthButton);
                 GUI.onClick(healthButton, function(v) {
                     GUI.openOption(v.getId());
                 });
@@ -254,6 +259,7 @@ function newLevel() {
                 speedButton.setText("속력");
                 speedButton.setTextColor(WHITE);
                 speedButton.setId(1);
+                GUI.setClickEffect(speedButton);
                 GUI.onClick(speedButton, function(v) {
                     GUI.openOption(v.getId());
                 });
@@ -261,20 +267,22 @@ function newLevel() {
 
                 layout.addView(GUI.widget.space());
 
-                speedButton = new Button(ctx);
-                speedButton.setText("공격력");
-                speedButton.setTextColor(WHITE);
-                speedButton.setId(2);
-                GUI.onClick(speedButton, function(v) {
+                var dmgButton = new Button(ctx);
+                dmgButton.setText("공격력");
+                dmgButton.setTextColor(WHITE);
+                dmgButton.setId(2);
+                GUI.setClickEffect(dmgButton);
+                GUI.onClick(dmgButton, function(v) {
                     GUI.openOption(v.getId());
                 });
-                layout.addView(speedButton);
+                layout.addView(dmgButton);
 
                 layout.addView(GUI.widget.space());
 
                 var modeButton = new Button(ctx);
                 modeButton.setText((myPet.mode === 0 ? "걷기" : "앉기"));
                 modeButton.setTextColor(WHITE);
+                GUI.setClickEffect(modeButton);
                 GUI.onClick(modeButton, function(v) {
                     myPet.mode++;
                     if (myPet.mode === 3) {
@@ -310,7 +318,7 @@ function newLevel() {
                 });
                 layout.addView(settingButton);
 
-                GUI.menuWindow = new PopupWindow(layout, GUI.width / 3, GUI.height, false);
+                GUI.menuWindow = new PopupWindow(layout, GUI.width / 3, GUI.height, true);
                 GUI.menuWindow.setBackgroundDrawable(GUI.window());
                 GUI.menuWindow.showAtLocation(ctx.getWindow()
                     .getDecorView(), RIGHT | BOTTOM, 0, 0);
@@ -359,6 +367,7 @@ function newLevel() {
     GUI.openHealth = function() {
         GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
+            layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
             function getHeart(n) {
@@ -402,7 +411,7 @@ function newLevel() {
                 print("먹이가 없습니다.");
             });
 
-            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, false);
+            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
             window.showAtLocation(ctx.getWindow()
                 .getDecorView(), RIGHT | BOTTOM, GUI.width / 3, GUI.height / 3);
@@ -416,6 +425,7 @@ function newLevel() {
     GUI.openSpeed = function() {
         GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
+            layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
             function getSpeed(n) {
@@ -459,7 +469,7 @@ function newLevel() {
                 print("먹이가 없습니다.");
             });
 
-            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, false);
+            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
             window.showAtLocation(ctx.getWindow()
                 .getDecorView(), RIGHT | BOTTOM, GUI.width / 3, GUI.height / 3);
@@ -473,6 +483,7 @@ function newLevel() {
     GUI.openDamage = function() {
         GUI.runOnUiThread(ctx, function() {
             var layout = new LinearLayout(ctx);
+            layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
             var title = new TextView(ctx);
@@ -506,7 +517,7 @@ function newLevel() {
                 }
             });
 
-            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, false);
+            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
             window.showAtLocation(ctx.getWindow()
                 .getDecorView(), RIGHT | BOTTOM, GUI.width / 3, GUI.height / 3);
@@ -527,7 +538,7 @@ function newLevel() {
                     myPet.move();
                 });
 
-                GUI.moveButtonWindow = new PopupWindow(layout, dp(48), dp(48), false);
+                GUI.moveButtonWindow = new PopupWindow(layout, dp(48), dp(48), true);
                 GUI.moveButtonWindow.showAtLocation(ctx.getWindow()
                     .getDecorView(), RIGHT | BOTTOM, 0, dp(50));
             });
@@ -591,7 +602,7 @@ function newLevel() {
                     return false;
                 }
             }));
-        }
+        });
     };
 
     GUI.onClick = function(view, content) {
