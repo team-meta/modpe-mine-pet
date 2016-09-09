@@ -54,32 +54,197 @@ let GUI = {},
     itemImageLoader = {},
     myPet = null;
 
+var DATA = {
+    speed: 50,
+    dmg: 5,
+    hp: null,
+    knock: -100,
+    name: "NONAME"
+};
+
 ModPE.setItem(700, "name_tag", 0, "Name Tag");
 
-function makePet(entity) {
-    this.entity = entity;
-    this.name = "이름을 지어주세요!";
-    Entity.setNameTag(this.entity, this.name);
-    this.target = null;
-    this.dmg = 5;
-    this.speed = 50;
-    this.mode = 0; //0 = walk, 1 = sit, 2 = ride
-    this.uid = Entity.getUniqueId(entity);
-    myPet = this;
+/**
+ * AI Prototype
+ * @author Adagio(magicwhos@gmail.com)
+ * @since 2016.6.1
+ * @version 1.1
+ */
+
+let mobArr = [],
+    ai = {};
+
+ai.death = function(v) {
+    var number = mobArr.indexOf(v);
+    if (number != -1) {
+        mobArr[number].deathHook();
+        mobArr[number].entity = null;
+        mobArr.splice(number, 1);
+    }
 }
-makePet.prototype.setName = function(name) {
-    this.name = name;
-    Entity.setNameTag(this.entity, this.name);
+ai.tick = function() {
+    var pe = Player.getEntity(),
+        __A = null || function() {};
+    Entity.action(mobArr, function(__F) {
+        var __B = function() {} || null;
+        (__F.entity !== null ? function() {
+            __C = null || function() {};
+            var __D = null || (__F.isAttacked ? __C : function() {
+                Entity.setSaw(__F.entity, pe);
+                __F.move()
+                    .changeType()
+                    .attack();
+                __F.tick(__F);
+            })();
+            var __E = null || (__F.getHealth() < __F.hp ? function() {
+                new java.lang.Thread({
+                    run: function() {
+                        __F.isAttacked = true;
+                        __F.isAttackedHook(__F);
+                        java.lang.Thread.sleep(__F.delay << 5 >> 5);
+                        __F.isAttacked = false;
+                    }
+                }).start();
+                __F.hp = null || __F.getHealth();
+            } : __C)();
+        } : __B)();
+    } || __A);
+}
+
+function MakePet(entity) {
+    this.entity = entity;
+    this.maxHp = Entity.getMaxHealth(this.entity);
+    this.hp = Entity.getHealth(this.entity);
+    this.isAttacked = false;
+    this.target = Player.getEntity();
+    this.type = "NORMAL";
+    this.delay = 500;
+    this.damage = {
+        NORMAL: -4,
+        ATTACK: -6,
+        AVOID: -2,
+        COUNTER_ATTACK: -8
+    };
+    this.knockBack = {
+        NORMAL: -100,
+        ATTACK: -150,
+        AVOID: -80,
+        COUNTER_ATTACK: -200
+    };
+    this.speed = {
+        NORMAL: 80,
+        ATTACK: 100,
+        AVOID: -20,
+        COUNTER_ATTACK: 120
+    };
+    mobArr.push(this);
+}
+
+MakePet.prototype = {};
+MakePet.prototype.setSkin = function(path) {
+    Entity.setMobSkin(this.entity, path);
+    return this;
 };
-makePet.prototype.setHealth = function(hp) {
-    Entity.setHealth(this.entity, hp);
+MakePet.prototype.getEntity = function() {
+    return this.entity;
 };
-makePet.prototype.setTarget = function(entity) {
-    this.target = entity;
+MakePet.prototype.getType = function() {
+    return this.type;
 };
-makePet.prototype.move = function() {
-    Entity.push(this.entity, 70 * this.speed / 100);
+MakePet.prototype.setType = function(type) {
+    this.type = type;
+    return this;
 };
+MakePet.setRenderType = function(renderer) {
+    Entity.setRenderType(this.entity, renderer);
+    return this;
+};
+MakePet.prototype.getHealth = function() {
+    return Entity.getHealth(this.entity);
+};
+MakePet.prototype.setHealth = function(n) {
+    this.hp = n;
+    Entity.setHealth(this.entity, n);
+    return this;
+};
+MakePet.prototype.getMaxHealth = function(n) {
+    return this.maxHp;
+};
+MakePet.prototype.setMaxHealth = function(n) {
+    this.maxHp = n;
+    Entity.setMaxHealth(this.entity, n);
+    return this;
+};
+MakePet.prototype.setDamage = function(type, n) {
+    if (type !== "ALL") this.damage[type] = n;
+    else {
+        for (var i in this.damage) this.damage[i] = n;
+    }
+    return this;
+};
+MakePet.prototype.setKnockBack = function(type, n) {
+    if (type !== "ALL") this.knockBack[type] = n;
+    else {
+        for (var i in this.knockBack) this.knockBack[i] = n;
+    }
+    return this;
+};
+MakePet.prototype.setSpeed = function(type, n) {
+    if (type !== "ALL") this.speed[type] = n;
+    else {
+        for (var i in this.speed) this.speed[i] = n;
+    }
+    return this;
+};
+MakePet.prototype.setTarget = function(ent) {
+    this.target = ent;
+    return this;
+};
+MakePet.prototype.getTarget = function(ent) {
+    return this.target;
+};
+MakePet.prototype.move = function() {
+    Entity.grab(this.entity, this.target, this.speed[this.type]);
+    return this;
+};
+MakePet.prototype.setDelay = function(mSecond) {
+    this.delay = mSecond;
+    return this;
+};
+MakePet.prototype.getDelay = function() {
+    return this.delay;
+};
+MakePet.prototype.attack = function() {
+    if (Entity.getDst(this.target, this.entity) <= 2) {
+        Entity.dmg(this.target, this.damage[this.type]);
+        Entity.grab(this.target, this.entity, this.knockBack[this.type]);
+        this.attackHook(this, this.target);
+    }
+    return this;
+};
+MakePet.prototype.changeType = function() {
+    var hp = this.getHealth();
+    if (hp >= this.maxHp) this.type = "COUNTER_ATTACK";
+    else if (hp >= this.maxHp / 4 * 3) this.type = "NORMAL";
+    else if (hp >= this.maxHp / 4 * 2) this.type = "ATTACK";
+    else if (hp >= this.maxHp / 4 * 1) this.type = "AVOID";
+    else if (hp < this.maxHp / 4) this.type = "COUNTER_ATTACK";
+    return this;
+};
+MakePet.prototype.tick = function(ai) {};
+MakePet.prototype.attackHook = function(ai, victim) {
+    if (Entity.getHealth(victim) <= 0) {
+        ai.setDamage("ALL", 0)
+            .setKnockBack("ALL", 0)
+            .setTarget(Player.getEntity());
+    }
+};
+MakePet.prototype.isAttackedHook = function(ai) {};
+MakePet.prototype.deathHook = function(ai) {};
+
+function deathHook(a, v) {
+    ai.death(v);
+}
 
 function dp(pixel) {
     return Math.ceil(pixel * density);
@@ -88,45 +253,29 @@ function dp(pixel) {
 function attackHook(a, v) {
     if (Player.getCarriedItem() == 700) {
         preventDefault();
-        makePet(v);
+        myPet = new MakePet(v)
+            .setDamage("ALL", 0)
+            .setKnockBack("ALL", 0)
+            .setSpeed("ALL", DATA.speed)
+            .setMaxHealth(20)
+            .setHealth(20)
+            .setTarget(Player.getEntity());
         print("펫으로 설정했습니다.");
+    } else {
+        myPet.setDamage("ALL", DATA.dmg)
+            .setKnockBack("ALL", DATA.knock)
+            .setTarget(v);
     }
 }
 
 function modTick() {
-    if (myPet !== null) {
-        if (myPet.mode === 0) {
-            //Entity.setImmobile(myPet.entity, false);
-            if (myPet.target === null) {
-                Entity.grab(myPet.entity, myPet.target, myPet.speed);
-                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target !== null) {
-                    Entity.grab(myPet.target, myPet.entity, myPet.speed);
-                    Entity.dmg(myPet.target, -myPet.dmg);
-                }
-            } else {
-                Entity.grab(myPet.entity, Player.getEntity(), myPet.speed);
-            }
-        }
-        if (myPet.mode === 1) {
-            //Entity.setSneaking(myPet.entity, true);
-            //Entity.setImmobile(myPet.entity, false);
-        }
-        if (myPet.mode === 2) {
-            //Entity.setImmobile(myPet.entity, true);
-            //GUI.openMoveButton();
-        }
-        if(myPet.mode !== 2) {
-            //GUI.deleteMoveButton();
-        }
-    }
+    ai.tick();
 }
 
 function newLevel() {
     GUI.open();
     Player.addItemCreativeInv(700, 2, 0);
 }
-
-
 
 /**
  * GUI의 Basic Source 입니다.
@@ -587,7 +736,7 @@ function newLevel() {
      */
     GUI.setClickEffect = function(view) {
         GUI.runOnUiThread(ctx, function() {
-          view.setBackgroundDrawable(GUI.buttonNormal());
+            view.setBackgroundDrawable(GUI.buttonNormal());
             view.setOnTouchListener(new View.OnTouchListener({
                 onTouch: function(v, event) {
                     switch (event.action) {
