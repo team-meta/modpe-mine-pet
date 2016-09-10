@@ -52,9 +52,10 @@ const Bitmap = android.graphics.Bitmap,
 
 let GUI = {},
     itemImageLoader = {},
-    myPet = null;
+    myPet = null,
+    meal = [364];
 
-var DATA = {
+let DATA = {
     speed: 50,
     dmg: 5,
     hp: null,
@@ -217,7 +218,9 @@ MakePet.prototype.getDelay = function() {
 MakePet.prototype.attack = function() {
     if (Entity.getDst(this.target, this.entity) <= 2) {
         Entity.dmg(this.target, this.damage[this.type]);
-        Entity.grab(this.target, this.entity, this.knockBack[this.type]);
+        if (this.knockBack[this.type] !== null) {
+            Entity.grab(this.target, this.entity, this.knockBack[this.type]);
+        }
         this.attackHook(this, this.target);
     }
     return this;
@@ -235,8 +238,8 @@ MakePet.prototype.tick = function(ai) {};
 MakePet.prototype.attackHook = function(ai, victim) {
     if (Entity.getHealth(victim) <= 0) {
         ai.setDamage("ALL", 0)
-            .setKnockBack("ALL", 0)
-            .setTarget(Player.getEntity());
+          .setKnockBack("ALL", null)
+          .setTarget(Player.getEntity());
     }
 };
 MakePet.prototype.isAttackedHook = function(ai) {};
@@ -255,7 +258,7 @@ function attackHook(a, v) {
         preventDefault();
         myPet = new MakePet(v)
             .setDamage("ALL", 0)
-            .setKnockBack("ALL", 0)
+            .setKnockBack("ALL", null)
             .setSpeed("ALL", DATA.speed)
             .setMaxHealth(20)
             .setHealth(20)
@@ -462,6 +465,7 @@ function newLevel() {
                 settingButton.setText("설정");
                 settingButton.setTextColor(WHITE);
                 settingButton.setId(3);
+                GUI.setClickEffect(settingButton);
                 GUI.onClick(settingButton, function(v) {
 
                 });
@@ -543,6 +547,7 @@ function newLevel() {
             healthView.setTextColor(RED);
             healthView.setTextSize(16);
             healthView.setText(getHeart(Entity.getHealth(myPet.entity)));
+            layout.addView(healthView);
 
             var button = new Button(ctx);
             button.setText("heal");
@@ -559,6 +564,7 @@ function newLevel() {
                 }
                 print("먹이가 없습니다.");
             });
+            layout.addView(button);
 
             var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
@@ -601,6 +607,7 @@ function newLevel() {
             speedView.setTextColor(RED);
             speedView.setTextSize(16);
             speedView.setText(getSpeed(myPet.speed));
+            layout.addView(speedView);
 
             var button = new Button(ctx);
             button.setText("heal");
@@ -617,6 +624,7 @@ function newLevel() {
                 }
                 print("먹이가 없습니다.");
             });
+            layout.addView(button);
 
             var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
@@ -650,6 +658,7 @@ function newLevel() {
             healthView.setGravity(CENTER);
             healthView.setTextColor(RED);
             healthView.setTextSize(16);
+            layout.addView(healthView);
 
             var button = new Button(ctx);
             button.setText("heal");
@@ -658,13 +667,13 @@ function newLevel() {
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
                     if (meal.indexOf(slot) !== -1) {
-                        // Error: {meal} is not defined.
                         Entity.dmg(myPet.entity, 4);
                         Player.setInventorySlot(i, slot, Player.getInventorySlotCount(i) - 1, Player.getInventorySlotData(i));
                         break;
                     }
                 }
             });
+            layout.addView(button);
 
             var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
