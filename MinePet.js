@@ -117,6 +117,7 @@ function MakePet(entity) {
     this.maxHp = Entity.getMaxHealth(this.entity);
     this.hp = Entity.getHealth(this.entity);
     this.isAttacked = false;
+    this.isAttacktive = true;
     this.target = Player.getEntity();
     this.type = "NORMAL";
     this.delay = 500;
@@ -215,13 +216,22 @@ MakePet.prototype.setDelay = function(mSecond) {
 MakePet.prototype.getDelay = function() {
     return this.delay;
 };
+MakePet.prototype.setAttacktive = function(bool) {
+	this.isAttacktive = bool;
+	return this;
+};
+MakePet.prototype.getAttacktive = function() {
+	return this.isAttacktive;
+};
 MakePet.prototype.attack = function() {
-    if (Entity.getDst(this.target, this.entity) <= 2) {
-        Entity.dmg(this.target, this.damage[this.type]);
-        if (this.knockBack[this.type] !== null) {
-            Entity.grab(this.target, this.entity, this.knockBack[this.type]);
+    if(this.isAttacktive) {
+        if (Entity.getDst(this.target, this.entity) <= 2) {
+            Entity.dmg(this.target, this.damage[this.type]);
+            if (this.knockBack[this.type] !== null) {
+                Entity.grab(this.target, this.entity, this.knockBack[this.type]);
+            }
+            this.attackHook(this, this.target);
         }
-        this.attackHook(this, this.target);
     }
     return this;
 };
@@ -235,13 +245,7 @@ MakePet.prototype.changeType = function() {
     return this;
 };
 MakePet.prototype.tick = function(ai) {};
-MakePet.prototype.attackHook = function(ai, victim) {
-    if (Entity.getHealth(victim) <= 0) {
-        ai.setDamage("ALL", 0)
-          .setKnockBack("ALL", null)
-          .setTarget(Player.getEntity());
-    }
-};
+MakePet.prototype.attackHook = function(ai, victim) {};
 MakePet.prototype.isAttackedHook = function(ai) {};
 MakePet.prototype.deathHook = function(ai) {};
 
@@ -262,11 +266,20 @@ function attackHook(a, v) {
             .setSpeed("ALL", DATA.speed)
             .setMaxHealth(20)
             .setHealth(20)
-            .setTarget(Player.getEntity());
+            .setTarget(Player.getEntity())
+            .setAttacktive(false)
+            .attackHook = function(ai, victim) {
+                if (Entity.getHealth(victim) <= 0) {
+                    ai.setDamage("ALL", 0)
+                    .setKnockBack("ALL", null)
+                    .setTarget(Player.getEntity());
+                }
+            };
         print("펫으로 설정했습니다.");
     } else {
         myPet.setDamage("ALL", DATA.dmg)
             .setKnockBack("ALL", DATA.knock)
+            .setAttacktive(true)
             .setTarget(v);
     }
 }
