@@ -57,7 +57,7 @@ let GUI = {},
 
 let DATA = {
     speed: 50,
-    dmg: 5,
+    dmg: -5,
     hp: null,
     knock: -100,
     name: "NONAME"
@@ -206,7 +206,9 @@ MakePet.prototype.getTarget = function(ent) {
     return this.target;
 };
 MakePet.prototype.move = function() {
-    Entity.grab(this.entity, this.target, this.speed[this.type]);
+    if(!this.isAttacktive && Entity.getDst(this.target, this.entity) > 2) {
+        Entity.grab(this.entity, this.target, this.speed[this.type]);
+    }
     return this;
 };
 MakePet.prototype.setDelay = function(mSecond) {
@@ -261,26 +263,27 @@ function attackHook(a, v) {
     if (Player.getCarriedItem() == 700) {
         preventDefault();
         myPet = new MakePet(v)
-            .setDamage("ALL", 0)
+            .setDamage("ALL", DATA.dmg)
             .setKnockBack("ALL", null)
             .setSpeed("ALL", DATA.speed)
             .setMaxHealth(20)
             .setHealth(20)
             .setTarget(Player.getEntity())
-            .setAttacktive(false)
+            .setAttacktive(false);
             .attackHook = function(ai, victim) {
                 if (Entity.getHealth(victim) <= 0) {
-                    ai.setDamage("ALL", 0)
-                    .setKnockBack("ALL", null)
+                    ai.setKnockBack("ALL", null)
+                    .setAttacktive(false)
                     .setTarget(Player.getEntity());
                 }
             };
         print("펫으로 설정했습니다.");
     } else {
-        myPet.setDamage("ALL", DATA.dmg)
-            .setKnockBack("ALL", DATA.knock)
-            .setAttacktive(true)
-            .setTarget(v);
+        if(myPet.entity !== v && myPet !== null) {
+            myPet.setKnockBack("ALL", DATA.knock)
+                .setAttacktive(true)
+                .setTarget(v);
+        }
     }
 }
 
@@ -291,6 +294,10 @@ function modTick() {
 function newLevel() {
     GUI.open();
     Player.addItemCreativeInv(700, 2, 0);
+}
+
+function leaveGame() {
+    GUI.close();
 }
 
 /**
@@ -559,7 +566,7 @@ function newLevel() {
             healthView.setGravity(CENTER);
             healthView.setTextColor(RED);
             healthView.setTextSize(16);
-            healthView.setText(getHeart(Entity.getHealth(myPet.entity)));
+            healthView.setText(getHeart(Entity.getHealth(myPet.getHealth())));
             layout.addView(healthView);
 
             var button = new Button(ctx);
@@ -619,7 +626,7 @@ function newLevel() {
             speedView.setGravity(CENTER);
             speedView.setTextColor(RED);
             speedView.setTextSize(16);
-            speedView.setText(getSpeed(myPet.speed));
+            speedView.setText(getSpeed(myPet.speed.NORMAL) + "%");
             layout.addView(speedView);
 
             var button = new Button(ctx);
@@ -656,6 +663,14 @@ function newLevel() {
             layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
+            function getDamage(n) {
+                var text = "";
+                for (var i = 0; i < n; i++) {
+                    text += "†";
+                }
+                return text;
+            }
+
             var title = new TextView(ctx);
             title.setText("Damage");
             title.setGravity(LEFT);
@@ -670,6 +685,7 @@ function newLevel() {
             var healthView = new TextView(ctx);
             healthView.setGravity(CENTER);
             healthView.setTextColor(RED);
+            healthView.setText(getDamage(myPet.damage.NORMAL));
             healthView.setTextSize(16);
             layout.addView(healthView);
 
