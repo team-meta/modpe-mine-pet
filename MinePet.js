@@ -4,78 +4,7 @@
  *
  * @since 2016.8.1
  */
-var GUI;
-
-ModPE.setItem(500, "name_tag", 0, "Name Tag");
-var myPet = null;
-
-function makePet(entity) {
-    this.entity = entity;
-    this.name = "이름을 지어주세요!";
-    Entity.setNameTag(this.entity, this.name);
-    this.target = null;
-    this.dmg = 5;
-    this.speed = 50;
-    this.mode = 0; //0 = walk, 1 = sit, 2 = ride
-    this.uid = Entity.getUniqueId(entity);
-    myPet = this;
-}
-makePet.prototype.setName = function (name) {
-    this.name = name;
-    Entity.setNameTag(this.entity, this.name);
-};
-makePet.prototype.setHealth = function (hp) {
-    Entity.setHealth(this.entity, hp);
-};
-makePet.prototype.setTarget = function (entity) {
-    this.target = entity;
-};
-makePet.prototype.move = function () {
-    Entity.push(this.entity, 70 * this.speed / 100);
-};
-
-function attackHook(a, v) {
-    if (Player.getCarriedItem() === 500) {
-        makePet(v);
-    }
-}
-
-function modTick() {
-    if (myPet !== null) {
-        if (myPet.mode === 0) {
-            Entity.setImmobile(myPet.entity, false);
-            if (myPet.target !== null) { //if target is not set
-                Entity.grab(myPet.entity, myPet.target, myPet.speed);
-            } else { //if target is set
-                Entity.grab(myPet.entity, myPet.target, myPet.speed); //following the target
-                /** dmg the target **/
-<<<<<<< HEAD
-                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target !== null) {
-                    Entity.grab(myPet.target, myPet.entity, myPet.speed); //push the target
-                    Entity.dmg(myPet.target, -myPet.dmg); //damage the target
-=======
-                if (Entity.getDst(myPet.target, myPet.entity) <= 2 && myPet.target!) {
-                    // Syntax error but I can't understand what this line means.
-                    Entity.grab(myPet.target, myPet.entity, myPet.speed);
-                    Entity.dmg(myPet.target, -myPet.dmg);
->>>>>>> refs/remotes/origin/master
-                }
-            }
-        }
-        if (myPet.mode === 1) {
-            Entity.setSneaking(myPet.entity, true);
-            Entity.setImmobile(myPet.entity, false);
-        }
-        if (myPet.mode === 2) {
-            Entity.setImmobile(myPet.entity, true);
-            GUI.openMoveButton();
-        } else {
-            GUI.deleteMoveButton();
-        }
-    }
-}
-
-var Bitmap = android.graphics.Bitmap,
+const Bitmap = android.graphics.Bitmap,
     BitmapFactory = android.graphics.BitmapFactory,
     Color = android.graphics.Color,
     ColorDrawable = android.graphics.drawable.ColorDrawable,
@@ -119,20 +48,260 @@ var Bitmap = android.graphics.Bitmap,
     PURPLE = Color.parseColor("#BA68C8"),
     DEEP_PURPLE = Color.parseColor("#7E57C2"),
     PINK = Color.parseColor("#F06292"),
-    density = ctx.getResources()
-    .getDisplayMetrics()
-    .density;
+    density = ctx.getResources().getDisplayMetrics().density;
 
-var dp = function (pixel) {
-    return Math.ceil(pixel * density);
+var GUI = {},
+    itemImageLoader = {},
+    myPet = null,
+    meal = [364];
+
+var DATA = {
+    speed: 50,
+    dmg: -5,
+    hp: null,
+    knock: -100,
+    name: "NONAME"
 };
+
+ModPE.setItem(700, "name_tag", 0, "Name Tag");
+
+/**
+ * AI Prototype
+ * @author Adagio(magicwhos@gmail.com)
+ * @since 2016.6.1
+ * @version 1.1
+ */
+
+var mobArr = [],
+    ai = {};
+
+ai.death = function(v) {
+    var number = mobArr.indexOf(v);
+    if (number != -1) {
+        mobArr[number].deathHook();
+        mobArr[number].entity = null;
+        mobArr.splice(number, 1);
+    }
+}
+ai.tick = function() {
+    var pe = Player.getEntity(),
+        __A = null || function() {};
+    Entity.action(mobArr, function(__F) {
+        var __B = function() {} || null;
+        (__F.entity !== null ? function() {
+            __C = null || function() {};
+            var __D = null || (__F.isAttacked ? __C : function() {
+                Entity.setSaw(__F.entity, pe);
+                __F.move()
+                    .changeType()
+                    .attack();
+                __F.tick(__F);
+            })();
+            var __E = null || (__F.getHealth() < __F.hp ? function() {
+                new java.lang.Thread({
+                    run: function() {
+                        __F.isAttacked = true;
+                        __F.isAttackedHook(__F);
+                        java.lang.Thread.sleep(__F.delay << 5 >> 5);
+                        __F.isAttacked = false;
+                    }
+                }).start();
+                __F.hp = null || __F.getHealth();
+            } : __C)();
+        } : __B)();
+    } || __A);
+}
+
+function MakePet(entity) {
+    this.entity = entity;
+    this.maxHp = Entity.getMaxHealth(this.entity);
+    this.hp = Entity.getHealth(this.entity);
+    this.isAttacked = false;
+    this.isAttacktive = true;
+    this.target = Player.getEntity();
+    this.type = "NORMAL";
+    this.delay = 500;
+    this.damage = {
+        NORMAL: -4,
+        ATTACK: -6,
+        AVOID: -2,
+        COUNTER_ATTACK: -8
+    };
+    this.knockBack = {
+        NORMAL: -100,
+        ATTACK: -150,
+        AVOID: -80,
+        COUNTER_ATTACK: -200
+    };
+    this.speed = {
+        NORMAL: 80,
+        ATTACK: 100,
+        AVOID: -20,
+        COUNTER_ATTACK: 120
+    };
+    mobArr.push(this);
+}
+
+MakePet.prototype = {};
+MakePet.prototype.setSkin = function(path) {
+    Entity.setMobSkin(this.entity, path);
+    return this;
+};
+MakePet.prototype.getEntity = function() {
+    return this.entity;
+};
+MakePet.prototype.getType = function() {
+    return this.type;
+};
+MakePet.prototype.setType = function(type) {
+    this.type = type;
+    return this;
+};
+MakePet.setRenderType = function(renderer) {
+    Entity.setRenderType(this.entity, renderer);
+    return this;
+};
+MakePet.prototype.getHealth = function() {
+    return Entity.getHealth(this.entity);
+};
+MakePet.prototype.setHealth = function(n) {
+    this.hp = n;
+    Entity.setHealth(this.entity, n);
+    return this;
+};
+MakePet.prototype.getMaxHealth = function(n) {
+    return this.maxHp;
+};
+MakePet.prototype.setMaxHealth = function(n) {
+    this.maxHp = n;
+    Entity.setMaxHealth(this.entity, n);
+    return this;
+};
+MakePet.prototype.setDamage = function(type, n) {
+    if (type !== "ALL") this.damage[type] = n;
+    else {
+        for (var i in this.damage) this.damage[i] = n;
+    }
+    return this;
+};
+MakePet.prototype.setKnockBack = function(type, n) {
+    if (type !== "ALL") this.knockBack[type] = n;
+    else {
+        for (var i in this.knockBack) this.knockBack[i] = n;
+    }
+    return this;
+};
+MakePet.prototype.setSpeed = function(type, n) {
+    if (type !== "ALL") this.speed[type] = n;
+    else {
+        for (var i in this.speed) this.speed[i] = n;
+    }
+    return this;
+};
+MakePet.prototype.setTarget = function(ent) {
+    this.target = ent;
+    return this;
+};
+MakePet.prototype.getTarget = function(ent) {
+    return this.target;
+};
+MakePet.prototype.move = function() {
+    if(!this.isAttacktive && Entity.getDst(this.target, this.entity) > 2) {
+        Entity.grab(this.entity, this.target, this.speed[this.type]);
+    }
+    return this;
+};
+MakePet.prototype.setDelay = function(mSecond) {
+    this.delay = mSecond;
+    return this;
+};
+MakePet.prototype.getDelay = function() {
+    return this.delay;
+};
+MakePet.prototype.setAttacktive = function(bool) {
+	this.isAttacktive = bool;
+	return this;
+};
+MakePet.prototype.getAttacktive = function() {
+	return this.isAttacktive;
+};
+MakePet.prototype.attack = function() {
+    if(this.isAttacktive) {
+        if (Entity.getDst(this.target, this.entity) <= 2) {
+            Entity.dmg(this.target, this.damage[this.type]);
+            if (this.knockBack[this.type] !== null) {
+                Entity.grab(this.target, this.entity, this.knockBack[this.type]);
+            }
+            this.attackHook(this, this.target);
+        }
+    }
+    return this;
+};
+MakePet.prototype.changeType = function() {
+    var hp = this.getHealth();
+    if (hp >= this.maxHp) this.type = "COUNTER_ATTACK";
+    else if (hp >= this.maxHp / 4 * 3) this.type = "NORMAL";
+    else if (hp >= this.maxHp / 4 * 2) this.type = "ATTACK";
+    else if (hp >= this.maxHp / 4 * 1) this.type = "AVOID";
+    else if (hp < this.maxHp / 4) this.type = "COUNTER_ATTACK";
+    return this;
+};
+MakePet.prototype.tick = function(ai) {};
+MakePet.prototype.attackHook = function(ai, victim) {};
+MakePet.prototype.isAttackedHook = function(ai) {};
+MakePet.prototype.deathHook = function(ai) {};
+
+function deathHook(a, v) {
+    ai.death(v);
+}
+
+function dp(pixel) {
+    return Math.ceil(pixel * density);
+}
+
+function attackHook(a, v) {
+    if (Player.getCarriedItem() == 700) {
+        preventDefault();
+        myPet = new MakePet(v)
+            .setDamage("ALL", DATA.dmg)
+            .setKnockBack("ALL", null)
+            .setSpeed("ALL", DATA.speed)
+            .setMaxHealth(20)
+            .setHealth(20)
+            .setTarget(Player.getEntity())
+            .setAttacktive(false)
+            .attackHook = function(attacker, victim) {
+                if (Entity.getHealth(victim) <= 0) {
+                    myPet.setKnockBack("ALL", null)
+                        .setAttacktive(false)
+                        .setTarget(Player.getEntity());
+                }
+            };
+        print("펫으로 설정했습니다.");
+    } else {
+        if(myPet.entity !== v && myPet !== null) {
+            myPet.setKnockBack("ALL", DATA.knock)
+                .setAttacktive(true)
+                .setTarget(v);
+        }
+    }
+}
+
+function modTick() {
+    ai.tick();
+}
 
 function newLevel() {
     GUI.open();
+    Player.addItemCreativeInv(700, 2, 0);
+}
+
+function leaveGame() {
+    GUI.close();
 }
 
 /**
- * GUI
+ * GUI의 Basic Source 입니다.
  * @since 2016.08.05
  */
 (GUI => {
@@ -161,17 +330,17 @@ function newLevel() {
         var drawable = new NinePatchDrawable(ctx.getResources(), bitmap, buffer.array(), new android.graphics.Rect(), null);
         return drawable;
     };
-    GUI.buttonNormal = () => {
+    GUI.buttonNormal = function() {
         var bitmap = Bitmap.createBitmap(GUI.sheet, 8, 32, 8, 8);
         var bit = Bitmap.createScaledBitmap(bitmap, dp(16), dp(16), false);
         return GUI.createNinePatch(bit, dp(4), dp(4), dp(12), dp(14));
     };
-    GUI.buttonPress = () => {
+    GUI.buttonPress = function() {
         var bitmap = Bitmap.createBitmap(GUI.sheet, 0, 32, 8, 8);
         var bit = Bitmap.createScaledBitmap(bitmap, dp(16), dp(16), false);
         return GUI.createNinePatch(bit, dp(4), dp(4), dp(12), dp(14));
     };
-    GUI.window = () => {
+    GUI.window = function() {
         var bitmap = Bitmap.createBitmap(GUI.sheet, 1, 1, 14, 14);
         bitmap.setPixel(0, 0, 0x00000001);
         bitmap.setPixel(13, 13, 0x00000001);
@@ -196,19 +365,15 @@ function newLevel() {
      * newLevel 함수에 호출되는 메인 버튼을 생성합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.open = () => {
+    GUI.open = function() {
         GUI.runOnUiThread(ctx, function() {
-=======
-    GUI.open = function () {
-        GUI.runOnUiThread(ctx, function () {
->>>>>>> refs/remotes/origin/master
             var mainButton = new Button(ctx);
             var mainLayout = new RelativeLayout(ctx);
-            GUI.onClick(mainButton, function () {
+            GUI.onClick(mainButton, function() {
                 GUI.openMenu();
             });
             GUI.setClickEffect(mainButton);
+            mainLayout.addView(mainButton);
             GUI.mainWindow = new PopupWindow(mainLayout, dp(48), dp(48), false);
             GUI.mainWindow.showAtLocation(ctx.getWindow()
                 .getDecorView(), RIGHT | BOTTOM, 0, 0);
@@ -219,17 +384,11 @@ function newLevel() {
      * newLevel 함수에 호출되는 메인 버튼을 제거합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.close = () => {
+    GUI.close = function() {
         GUI.runOnUiThread(ctx, function() {
-            if (GUI.mainWindow !== null) GUI.mainWindow.dismiss();
-=======
-    GUI.close = function () {
-        GUI.runOnUiThread(ctx, function () {
             if (GUI.mainWindow !== null) {
                 GUI.mainWindow.dismiss();
             }
->>>>>>> refs/remotes/origin/master
             GUI.mainWindow = null;
         });
     };
@@ -238,16 +397,11 @@ function newLevel() {
      * open 버튼을 클릭할 시 생성되는 메인 메뉴를 생성합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.openMenu = () => {
-        if (myPet != null) {
-            GUI.runOnUiThread(ctx, function() {
-=======
-    GUI.openMenu = function () {
-        if (myPet !== null) {
-            GUI.runOnUiThread(ctx, function () {
->>>>>>> refs/remotes/origin/master
+    GUI.openMenu = function() {
+        GUI.runOnUiThread(ctx, function() {
+            if (myPet !== null) {
                 var layout = new LinearLayout(ctx);
+                layout.setOrientation(1);
                 layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
                 var title = new TextView(ctx);
@@ -265,7 +419,8 @@ function newLevel() {
                 healthButton.setText("체력:" + Entity.getHealth(myPet.entity));
                 healthButton.setTextColor(WHITE);
                 healthButton.setId(0);
-                GUI.onClick(healthButton, function (v) {
+                GUI.setClickEffect(healthButton);
+                GUI.onClick(healthButton, function(v) {
                     GUI.openOption(v.getId());
                 });
                 layout.addView(healthButton);
@@ -276,28 +431,31 @@ function newLevel() {
                 speedButton.setText("속력");
                 speedButton.setTextColor(WHITE);
                 speedButton.setId(1);
-                GUI.onClick(speedButton, function (v) {
+                GUI.setClickEffect(speedButton);
+                GUI.onClick(speedButton, function(v) {
                     GUI.openOption(v.getId());
                 });
                 layout.addView(speedButton);
 
                 layout.addView(GUI.widget.space());
 
-                speedButton = new Button(ctx);
-                speedButton.setText("공격력");
-                speedButton.setTextColor(WHITE);
-                speedButton.setId(2);
-                GUI.onClick(speedButton, function (v) {
+                var dmgButton = new Button(ctx);
+                dmgButton.setText("공격력");
+                dmgButton.setTextColor(WHITE);
+                dmgButton.setId(2);
+                GUI.setClickEffect(dmgButton);
+                GUI.onClick(dmgButton, function(v) {
                     GUI.openOption(v.getId());
                 });
-                layout.addView(speedButton);
+                layout.addView(dmgButton);
 
                 layout.addView(GUI.widget.space());
 
                 var modeButton = new Button(ctx);
                 modeButton.setText((myPet.mode === 0 ? "걷기" : "앉기"));
                 modeButton.setTextColor(WHITE);
-                GUI.onClick(modeButton, function (v) {
+                GUI.setClickEffect(modeButton);
+                GUI.onClick(modeButton, function(v) {
                     myPet.mode++;
                     if (myPet.mode === 3) {
                         myPet.mode = 0;
@@ -327,36 +485,32 @@ function newLevel() {
                 settingButton.setText("설정");
                 settingButton.setTextColor(WHITE);
                 settingButton.setId(3);
-                GUI.onClick(settingButton, function (v) {
+                GUI.setClickEffect(settingButton);
+                GUI.onClick(settingButton, function(v) {
 
                 });
                 layout.addView(settingButton);
 
-                GUI.menuWindow = new PopupWindow(layout, GUI.width / 3, GUI.height, false);
+                GUI.menuWindow = new PopupWindow(layout, GUI.width / 3, GUI.height, true);
                 GUI.menuWindow.setBackgroundDrawable(GUI.window());
                 GUI.menuWindow.showAtLocation(ctx.getWindow()
                     .getDecorView(), RIGHT | BOTTOM, 0, 0);
-            });
-        } else {
-            print("이름표로 엔티티를 터치하여 펫으로 만들어주세요!");
-        }
+
+            } else {
+                print("펫이 존재하지 않습니다.");
+            }
+        });
     };
 
     /**
      * open 버튼을 클릭할 시 생성되는 메인 메뉴를 제거합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.closeMenu = () => {
+    GUI.closeMenu = function() {
         GUI.runOnUiThread(ctx, function() {
-            if (GUI.menuWindow !== null) GUI.menuWindow.dismiss();
-=======
-    GUI.closeMenu = function () {
-        GUI.runOnUiThread(ctx, function () {
             if (GUI.menuWindow !== null) {
                 GUI.menuWindow.dismiss();
             }
->>>>>>> refs/remotes/origin/master
             GUI.menuWindow = null;
         });
     };
@@ -365,47 +519,40 @@ function newLevel() {
      * 버튼에 따라 여러가지 옵션창을 생성합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.openOption = (id) => {
-=======
-    GUI.openOption = function (id) {
->>>>>>> refs/remotes/origin/master
+    GUI.openOption = function(id) {
         switch (id) {
-        case 0:
-            GUI.openHealth();
-            break;
-        case 1:
-            GUI.openSpeed();
-            break;
-        case 2:
-            GUI.openDamage();
-            break;
+            case 0:
+                GUI.openHealth();
+                break;
+            case 1:
+                GUI.openSpeed();
+                break;
+            case 2:
+                GUI.openDamage();
+                break;
         }
     };
 
     /**
-    * 일정한 텍스트를 반복하여 반환합니다
-    * @param {String} text 반복할 문자
-    * @param {Number} n 반복할 횟수
+    * 텍스트를 반복시켜 반환합니다
+    * @since 2016.9.17
     */
-    GUI.getMultiText = (text, n) => {
-      let str = "";
-      for(var i = 0; i < n; i++) str += text;
-      return str;
-    };
+    GUI.repeatText = function(str, n) {
+        var text = "";
+        for (var i = 0; i < n; i++) {
+            text += str;
+        }
+        return text;
+    }
 
     /**
      * myPet의 체력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.openHealth = () => {
+    GUI.openHealth = function() {
         GUI.runOnUiThread(ctx, function() {
-=======
-    GUI.openHealth = function () {
-        GUI.runOnUiThread(ctx, function () {
->>>>>>> refs/remotes/origin/master
             var layout = new LinearLayout(ctx);
+            layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
             var title = new TextView(ctx);
@@ -423,28 +570,27 @@ function newLevel() {
             healthView.setGravity(CENTER);
             healthView.setTextColor(RED);
             healthView.setTextSize(16);
-            healthView.setText(GUI.getMultiText("0", Entity.getHealth(myPet.entity)));
+            healthView.setText(GUI.repeatText("1", myPet.getHealth()));
+            layout.addView(healthView);
 
-            var button = new ImageView(ctx);
-            button.setImageBitmap(itemImageLoader.getImage(364, 0));
+            var button = new Button(ctx);
+            button.setText("heal");
             GUI.setClickEffect(button);
-            GUI.onClick(button, function () {
+            GUI.onClick(button, function() {
                 let meal = [364];
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
                     if (meal.indexOf(slot) !== -1) {
                         Entity.dmg(myPet.entity, 4);
-                        for(var i = 0; i < 4; i++) {
-                          Entity.particle.add(myPet.entity, 0, 0, 0, ParticleType.hear, 4);
-                        }
                         Player.setInventorySlot(i, slot, Player.getInventorySlotCount(i) - 1, Player.getInventorySlotData(i));
                         break;
                     }
                 }
                 print("먹이가 없습니다.");
             });
+            layout.addView(button);
 
-            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, false);
+            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
             window.showAtLocation(ctx.getWindow()
                 .getDecorView(), RIGHT | BOTTOM, GUI.width / 3, GUI.height / 3);
@@ -455,14 +601,10 @@ function newLevel() {
      * myPet의 속력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.openSpeed = () => {
+    GUI.openSpeed = function() {
         GUI.runOnUiThread(ctx, function() {
-=======
-    GUI.openSpeed = function () {
-        GUI.runOnUiThread(ctx, function () {
->>>>>>> refs/remotes/origin/master
             var layout = new LinearLayout(ctx);
+            layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
             var title = new TextView(ctx);
@@ -480,33 +622,27 @@ function newLevel() {
             speedView.setGravity(CENTER);
             speedView.setTextColor(RED);
             speedView.setTextSize(16);
-            speedView.setText(GUI.getMultiText("1" ,myPet.speed));
+            speedView.setText(GUI.repeatText("2", myPet.speed.NORMAL) + "%");
+            layout.addView(speedView);
 
-            var button = new ImageView(ctx);
-            button.setImageBitmap(itemImageLoader.getImage(364, 0));
+            var button = new Button(ctx);
+            button.setText("heal");
             GUI.setClickEffect(button);
-            GUI.onClick(button, function () {
+            GUI.onClick(button, function() {
                 let meal = [364];
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
-<<<<<<< HEAD
-                    if (meal.indexOf(slot) != -1) {
-                        myPet.speed += 2;
-                        for(var i = 0; i < 4; i++) {
-                          Entity.particle.add(myPet.entity, 0, 0, 0, ParticleType.splash, 4);
-                        }
-=======
                     if (meal.indexOf(slot) !== -1) {
                         Entity.dmg(myPet.entity, 4);
->>>>>>> refs/remotes/origin/master
                         Player.setInventorySlot(i, slot, Player.getInventorySlotCount(i) - 1, Player.getInventorySlotData(i));
                         break;
                     }
                 }
                 print("먹이가 없습니다.");
             });
+            layout.addView(button);
 
-            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, false);
+            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
             window.showAtLocation(ctx.getWindow()
                 .getDecorView(), RIGHT | BOTTOM, GUI.width / 3, GUI.height / 3);
@@ -517,14 +653,10 @@ function newLevel() {
      * myPet의 공격력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.openDamage = () => {
+    GUI.openDamage = function() {
         GUI.runOnUiThread(ctx, function() {
-=======
-    GUI.openDamage = function () {
-        GUI.runOnUiThread(ctx, function () {
->>>>>>> refs/remotes/origin/master
             var layout = new LinearLayout(ctx);
+            layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
             var title = new TextView(ctx);
@@ -538,40 +670,29 @@ function newLevel() {
             layout.addView(GUI.widget.line(2, WHITE));
             layout.addView(GUI.widget.space());
 
-<<<<<<< HEAD
-            var damageView = new TextView(ctx);
-            damageView.setGravity(CENTER);
-            damageView.setTextColor(RED);
-            damageView.setTextSize(16);
-            damageView.setText(GUI.getMultiText("2", myPet.dmg));
-=======
             var healthView = new TextView(ctx);
             healthView.setGravity(CENTER);
             healthView.setTextColor(RED);
+            healthView.setText(GUI.repeatText("3", myPet.damage.NORMAL));
             healthView.setTextSize(16);
->>>>>>> refs/remotes/origin/master
+            layout.addView(healthView);
 
             var button = new Button(ctx);
-            button.setImageBitmap(itemImageLoader.getImage(364, 0));
+            button.setText("heal");
             GUI.setClickEffect(button);
-            GUI.onClick(button, function () {
+            GUI.onClick(button, function() {
                 for (var i = 0; i < 55; i++) {
                     var slot = Player.getInventorySlot(i);
-<<<<<<< HEAD
-                    if (meal.indexOf(slot) != -1) {
-                        myPet.dmg ++;
-=======
                     if (meal.indexOf(slot) !== -1) {
-                        // Error: {meal} is not defined.
                         Entity.dmg(myPet.entity, 4);
->>>>>>> refs/remotes/origin/master
                         Player.setInventorySlot(i, slot, Player.getInventorySlotCount(i) - 1, Player.getInventorySlotData(i));
                         break;
                     }
                 }
             });
+            layout.addView(button);
 
-            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, false);
+            var window = new PopupWindow(layout, GUI.width / 3, GUI.height / 3, true);
             window.setBackgroundDrawable(GUI.window());
             window.showAtLocation(ctx.getWindow()
                 .getDecorView(), RIGHT | BOTTOM, GUI.width / 3, GUI.height / 3);
@@ -582,23 +703,17 @@ function newLevel() {
      * myPet을 움직일 수 있게 만드는 버튼을 생성합니다.
      * @since 2016.08.05
      */
-<<<<<<< HEAD
-    GUI.openMoveButton = () => {
-        if (GUI.isMove == false) {
-            GUI.runOnUiThread(ctx, function() {
-=======
-    GUI.openMoveButton = function () {
+    GUI.openMoveButton = function() {
         if (!GUI.isMove) {
-            GUI.runOnUiThread(ctx, function () {
->>>>>>> refs/remotes/origin/master
+            GUI.runOnUiThread(ctx, function() {
                 var layout = new RelativeLayout(ctx);
                 var button = new Button(ctx);
                 GUI.setClickEffect(button);
-                GUI.onClick(button, function (v) {
+                GUI.onClick(button, function(v) {
                     myPet.move();
                 });
 
-                GUI.moveButtonWindow = new PopupWindow(layout, dp(48), dp(48), false);
+                GUI.moveButtonWindow = new PopupWindow(layout, dp(48), dp(48), true);
                 GUI.moveButtonWindow.showAtLocation(ctx.getWindow()
                     .getDecorView(), RIGHT | BOTTOM, 0, dp(50));
             });
@@ -610,19 +725,12 @@ function newLevel() {
      * myPet을 움직일 수 있게 만드는 버튼을 제거합니다.
      * @since 2016.08.07
      */
-<<<<<<< HEAD
-    GUI.openMoveButton = () => {
-        if (GUI.isMove == true) {
-            GUI.runOnUiThread(ctx, function() {
-                if (GUI.moveButtonWindow !== null) GUI.moveButtonWindow.dismiss();
-=======
-    GUI.openMoveButton = function () {
+    GUI.openMoveButton = function() {
         if (GUI.isMove) {
-            GUI.runOnUiThread(ctx, function () {
+            GUI.runOnUiThread(ctx, function() {
                 if (GUI.moveButtonWindow !== null) {
                     GUI.moveButtonWindow.dismiss();
                 }
->>>>>>> refs/remotes/origin/master
                 GUI.moveButtonWindow = null;
             });
             GUI.isMove = false;
@@ -635,13 +743,9 @@ function newLevel() {
      * @param {Context} ctx Activity
      * @param {Function} content 실행할 함수
      */
-<<<<<<< HEAD
-    GUI.runOnUiThread = (ctx, content) => {
-=======
-    GUI.runOnUiThread = function (ctx, content) {
->>>>>>> refs/remotes/origin/master
+    GUI.runOnUiThread = function(ctx, content) {
         ctx.runOnUiThread(new Runnable({
-            run: function () {
+            run: function() {
                 try {
                     content();
                 } catch (error) {
@@ -656,39 +760,30 @@ function newLevel() {
      * @since 2016.08.05
      * @param {Widget} view 해당위젯
      */
-<<<<<<< HEAD
-    GUI.setClickEffect = (view) => {
+    GUI.setClickEffect = function(view) {
         GUI.runOnUiThread(ctx, function() {
-            view.setClickable(true);
-=======
-    GUI.setClickEffect = function (view) {
-        GUI.runOnUiThread(ctx, function () {
->>>>>>> refs/remotes/origin/master
             view.setBackgroundDrawable(GUI.buttonNormal());
-            GUI.onTouch(view, function (v) {
-                view.setBackgroundDrawable(GUI.buttonPress());
-            }, function () {
-                view.setBackgroundDrawable(GUI.buttonNormal());
-            });
+            view.setOnTouchListener(new View.OnTouchListener({
+                onTouch: function(v, event) {
+                    switch (event.action) {
+                        case android.view.MotionEvent.ACTION_DOWN: //버튼에 손 댔을 때
+                            view.setBackgroundDrawable(GUI.buttonPress());
+                            break;
+
+                        case android.view.MotionEvent.ACTION_UP: //버튼에서 손 땟을때
+                            view.setBackgroundDrawable(GUI.buttonNormal());
+                            break;
+                    }
+                    return false;
+                }
+            }));
         });
     };
-<<<<<<< HEAD
 
-    /**
-     * 버튼클릭시
-     * @since 2016.08.05
-     * @param {Widget} view 해당위젯
-     * @param {Function} content 실행함수
-     */
-    GUI.onClick = (view, content) => {
-        GUI.runOnUiThread(this.ctx, function() {
-            view.setClickable(true);
-=======
-    GUI.onClick = function (view, content) {
-        GUI.runOnUiThread(this.ctx, function () {
->>>>>>> refs/remotes/origin/master
+    GUI.onClick = function(view, content) {
+        GUI.runOnUiThread(ctx, function() {
             view.setOnClickListener(new View.OnClickListener({
-                onClick: function (v) {
+                onClick: function(v) {
                     if (content !== null) {
                         content(v);
                     }
@@ -696,23 +791,11 @@ function newLevel() {
             }));
         });
     };
-<<<<<<< HEAD
 
-    /**
-     * 버튼을 길게 누를시
-     * @since 2016.08.05
-     * @param {Widget} view 해당위젯
-     * @param {Function} content 실행함수
-     */
-    GUI.onLongClick = (view, content) => {
-        GUI.runOnUiThread(this.ctx, function() {
-            view.setClickable(true);
-=======
-    GUI.onLongClick = function (view, content) {
-        GUI.runOnUiThread(this.ctx, function () {
->>>>>>> refs/remotes/origin/master
+    GUI.onLongClick = function(view, content) {
+        GUI.runOnUiThread(ctx, function() {
             view.setOnLongClickListener(new View.OnLongClickListener({
-                onLongClick: function () {
+                onLongClick: function() {
                     if (content !== null) {
                         content();
                     }
@@ -721,43 +804,29 @@ function newLevel() {
             }));
         });
     };
-<<<<<<< HEAD
 
-    /**
-     * 버튼을 터치할시
-     * @since 2016.08.05
-     * @param {Widget} view 해당위젯
-     * @param {Function} func 버튼에 손댔을때 실행함수
-     * @param {Function} func2 버튼에 손땠을때 실행함수
-     * @param {Function} func3 버튼에 손을 대고있을때
-     */
-    GUI.onTouch = (view, func, func2, func3) => {
-        GUI.runOnUiThread(this.ctx, function() {
-            view.setClickable(true);
-=======
-    GUI.onTouch = function (view, func, func2, func3) {
-        GUI.runOnUiThread(this.ctx, function () {
->>>>>>> refs/remotes/origin/master
-            view.setOnTouchListener(new android.view.View.OnTouchListener({
-                onTouch: function (v, event) {
+    GUI.onTouch = function(view, func, func2, func3) {
+        GUI.runOnUiThread(ctx, function() {
+            view.setOnTouchListener(new View.OnTouchListener({
+                onTouch: function(v, event) {
                     switch (event.action) {
-                    case android.view.MotionEvent.ACTION_DOWN: //버튼에 손 댔을 때
-                        if (func !== null) {
-                            func();
-                        }
-                        break;
+                        case android.view.MotionEvent.ACTION_DOWN: //버튼에 손 댔을 때
+                            if (func !== null) {
+                                func(v);
+                            }
+                            break;
 
-                    case android.view.MotionEvent.ACTION_UP: //버튼에서 손 땟을때
-                        if (func2 !== null) {
-                            func2();
-                        }
-                        break;
+                        case android.view.MotionEvent.ACTION_UP: //버튼에서 손 땟을때
+                            if (func2 !== null) {
+                                func2(v);
+                            }
+                            break;
 
-                    case android.view.MotionEvent.ACTION_MOVE:
-                        if (func3 !== null) {
-                            func3();
-                        }
-                        break;
+                        case android.view.MotionEvent.ACTION_MOVE:
+                            if (func3 !== null) {
+                                func3(v);
+                            }
+                            break;
                     }
                     return false;
                 }
@@ -770,17 +839,10 @@ function newLevel() {
     "use strict";
 
     /**
-<<<<<<< HEAD
-     * 뛰어쓰기용 위젯을 반환합니다.
-     * @since 2016.08.05
-     */
-    widget.space = function() => {
-=======
      * 띄어쓰기용 위젯을 반환합니다.
      * @since 2016.08.05
      */
     widget.space = () => {
->>>>>>> refs/remotes/origin/master
         var text = new TextView(ctx);
         text.setText("");
         text.setTextSize(2);
@@ -801,58 +863,6 @@ function newLevel() {
         return line;
     };
 })(GUI.widget || (GUI.widget = {}));
-<<<<<<< HEAD
-
-/**
- * @file itemImageLoader
- * @author Adagio <magicwho@naver.com>
- * @since 2016-08-21
- * @version 1.0
- */
-
-/**
- * @namespace itemImageLoader
- */
-(itemImageLoader => {
-	"use strict";
-
-	itemImageLoader.uvs = eval(new java.lang.String(ModPE.getBytesFromTexturePack("images/items.meta")) + "");
-	itemImageLoader.sheet = BitmapFactory.decodeStream(ModPE.openInputStreamFromTexturePack("images/items-opaque.png"));
-
-	/**
-	 * 아이템 코드를 아이템 이름으로 변경
-	 * @param {Number} itemCode 아이템코드
-	 */
-	itemImageLoader.item2name = (itemCode) => {
-		return net.zhuoweizhang.mcpelauncher.ScriptManager.nativeGetItemName(number, 0, false);
-	}
-
-	/**
-	 * 아이템비트맵을 반환합니다.
-	 * @param {Number} element 아이템 이름
-	 * @param {Number} type 아이템 타입
-	 */
-	itemImageLoader.makeBitmap = (name, type) => {
-		for(var i = 0, max = this.uvs.length; i < max; i++) {
-			var obj = this.uvs[i];
-			if(obj.name === name) {
-				return Bitmap.createBitmap(this.sheet, obj.uvs[type][0], obj.uvs[type][1], 16, 16);
-			}
-		}
-	};
-
-	/**
-	 * 아이템비트맵을 반환합니다.
-	 * @param {Number} element 아이템 이름 or 아이템 코드
-	 * @param {Number} type 아이템 타입
-	 */
-	itemImageLoader.getImage = (element, type) => {
-		if(typeof element === "string") itemImageLoader.makeBitmap(element, type);
-		if(typeof element === "number") itemImageLoader.makeBitmap(itemImageLoader.item2name(element), type);
-	}
-})(itemImageLoader);
-=======
->>>>>>> refs/remotes/origin/master
 
 /**
  * @file
