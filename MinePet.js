@@ -50,12 +50,12 @@ const Bitmap = android.graphics.Bitmap,
     PINK = Color.parseColor("#F06292"),
     density = ctx.getResources().getDisplayMetrics().density;
 
-let GUI = {},
+var GUI = {},
     itemImageLoader = {},
     myPet = null,
     meal = [364];
 
-let DATA = {
+var DATA = {
     speed: 50,
     dmg: -5,
     hp: null,
@@ -72,7 +72,7 @@ ModPE.setItem(700, "name_tag", 0, "Name Tag");
  * @version 1.1
  */
 
-let mobArr = [],
+var mobArr = [],
     ai = {};
 
 ai.death = function(v) {
@@ -121,6 +121,7 @@ function MakePet(entity) {
     this.target = Player.getEntity();
     this.type = "NORMAL";
     this.delay = 500;
+    this.mode = 0;
     this.damage = {
         NORMAL: -4,
         ATTACK: -6,
@@ -140,6 +141,7 @@ function MakePet(entity) {
         COUNTER_ATTACK: 120
     };
     mobArr.push(this);
+    return this;
 }
 
 MakePet.prototype = {};
@@ -206,7 +208,9 @@ MakePet.prototype.getTarget = function(ent) {
     return this.target;
 };
 MakePet.prototype.move = function() {
-    if(!this.isAttacktive && Entity.getDst(this.target, this.entity) > 2) {
+    if(!this.isAttacktive && Entity.getDst(this.target, this.entity) > 4) {
+        if(this.mode == 1) Entity.setImmobile(this.entity, true);
+        else Entity.setImmobile(this.entity, false);
         Entity.grab(this.entity, this.target, this.speed[this.type]);
     }
     return this;
@@ -262,27 +266,25 @@ function dp(pixel) {
 function attackHook(a, v) {
     if (Player.getCarriedItem() == 700) {
         preventDefault();
-        myPet = new MakePet(v)
-            .setDamage("ALL", DATA.dmg)
-            .setKnockBack("ALL", null)
+        myPet = new MakePet(v);
+        myPet.setDamage("ALL", DATA.dmg)
+            .setKnockBack("ALL", DATA.knockBack)
             .setSpeed("ALL", DATA.speed)
             .setMaxHealth(20)
             .setHealth(20)
             .setTarget(Player.getEntity())
-            .setAttacktive(false);
-            .attackHook = function(ai, victim) {
+            .setAttacktive(false)
+            .attackHook = function(attacker, victim) {
                 if (Entity.getHealth(victim) <= 0) {
-                    ai.setKnockBack("ALL", null)
-                    .setAttacktive(false)
-                    .setTarget(Player.getEntity());
+                    attacker.setAttacktive(false)
+                        .setTarget(Player.getEntity());
                 }
             };
         print("펫으로 설정했습니다.");
     } else {
         if(myPet.entity !== v && myPet !== null) {
-            myPet.setKnockBack("ALL", DATA.knock)
-                .setAttacktive(true)
-                .setTarget(v);
+            myPet.setAttacktive(true);
+            myPet.setTarget(v);
         }
     }
 }
@@ -534,6 +536,18 @@ function leaveGame() {
     };
 
     /**
+    * 텍스트를 반복시켜 반환합니다
+    * @since 2016.9.17
+    */
+    GUI.repeatText = function(str, n) {
+        var text = "";
+        for (var i = 0; i < n; i++) {
+            text += str;
+        }
+        return text;
+    }
+
+    /**
      * myPet의 체력을 수정할 수 있는 창을 생성합니다.
      * @since 2016.08.05
      */
@@ -542,14 +556,6 @@ function leaveGame() {
             var layout = new LinearLayout(ctx);
             layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
-
-            function getHeart(n) {
-                var text = "";
-                for (var i = 0; i < n; i++) {
-                    text += "†";
-                }
-                return text;
-            }
 
             var title = new TextView(ctx);
             title.setText("Health");
@@ -566,7 +572,7 @@ function leaveGame() {
             healthView.setGravity(CENTER);
             healthView.setTextColor(RED);
             healthView.setTextSize(16);
-            healthView.setText(getHeart(Entity.getHealth(myPet.getHealth())));
+            healthView.setText(GUI.repeatText("1", myPet.getHealth()));
             layout.addView(healthView);
 
             var button = new Button(ctx);
@@ -603,14 +609,6 @@ function leaveGame() {
             layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
-            function getSpeed(n) {
-                var text = "";
-                for (var i = 0; i < n; i++) {
-                    text += "†";
-                }
-                return text;
-            }
-
             var title = new TextView(ctx);
             title.setText("speed");
             title.setGravity(LEFT);
@@ -626,7 +624,7 @@ function leaveGame() {
             speedView.setGravity(CENTER);
             speedView.setTextColor(RED);
             speedView.setTextSize(16);
-            speedView.setText(getSpeed(myPet.speed.NORMAL) + "%");
+            speedView.setText(GUI.repeatText("2", myPet.speed.NORMAL) + "%");
             layout.addView(speedView);
 
             var button = new Button(ctx);
@@ -663,14 +661,6 @@ function leaveGame() {
             layout.setOrientation(1);
             layout.setPadding(dp(8), dp(8), dp(8), dp(8));
 
-            function getDamage(n) {
-                var text = "";
-                for (var i = 0; i < n; i++) {
-                    text += "†";
-                }
-                return text;
-            }
-
             var title = new TextView(ctx);
             title.setText("Damage");
             title.setGravity(LEFT);
@@ -685,7 +675,7 @@ function leaveGame() {
             var healthView = new TextView(ctx);
             healthView.setGravity(CENTER);
             healthView.setTextColor(RED);
-            healthView.setText(getDamage(myPet.damage.NORMAL));
+            healthView.setText(GUI.repeatText("3", myPet.damage.NORMAL));
             healthView.setTextSize(16);
             layout.addView(healthView);
 
